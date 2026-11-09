@@ -16,8 +16,11 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"],
   },
-  // No routes yet: the album.guide custom domain is added once its zone is on
-  // Cloudflare. workers.dev stays on because preview URLs live there.
+  // Production. A Workers custom domain: the deploy creates the apex DNS record
+  // and certificate. www.album.guide is a zone redirect rule, not a route, so
+  // the Worker still runs only for /api/*. See docs/decisions/0003-domain.md.
+  "routes": [{ "pattern": "album.guide", "custom_domain": true }],
+  // workers.dev stays on because preview URLs live there.
   "workers_dev": true,
   // First-party telemetry (standards/telemetry.md). The account's shared
   // site_events dataset, keyed by site id "album-guide". Nothing is written
