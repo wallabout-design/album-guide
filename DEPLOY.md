@@ -5,7 +5,7 @@ Two things deploy, in different ways:
 | | the site | the catalog API |
 | --- | --- | --- |
 | what | static Vite build, Worker `album-guide-site` | Python server, Fly app `album-guide-api` |
-| where | https://album.guide (until the custom domain is live, https://album-guide-site.jj-23b.workers.dev) | https://album-guide-api.fly.dev |
+| where | https://album.guide (`www.album.guide` redirects there) | https://album-guide-api.fly.dev |
 | how | Workers Builds, on every push | `fly deploy`, by hand |
 | who | anyone who merges a PR | JJ only |
 
@@ -35,9 +35,9 @@ previous version; or revert the PR and merge the revert.
 `npm run deploy` (`build:production`, then `wrangler deploy`), from a worktree on an up-to-date
 `main`.
 
-GitHub Pages (`jj-noonan.github.io/album-guide/`, `.github/workflows/deploy.yml`)
-is being retired once the Worker serves album.guide. Don't add a `public/CNAME`
-or a Pages workflow back.
+GitHub Pages (`jj-noonan.github.io/album-guide/`) was retired on 2026-11-09,
+once the Worker served album.guide. Don't add a `public/CNAME` or a Pages
+workflow back.
 
 ## The API: Fly.io (JJ only)
 
