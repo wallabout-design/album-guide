@@ -17,6 +17,11 @@ updates:
       # Types track the Node version CI runs (24), not the latest. Raise both together.
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      # The shared feedback link (wallabout-design/feedback) is installed from a
+      # git tag, and we bump that tag by hand when we choose to
+      # (standards/feedback.md in wallabout-design/standards). Dependabot also
+      # mis-orders its tags: it offered v0.2.0 -> v0.1.0, a downgrade (#12).
+      - dependency-name: "@wallabout-design/feedback"
 
   - package-ecosystem: github-actions
     directory: /
