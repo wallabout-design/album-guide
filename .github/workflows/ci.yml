@@ -37,6 +37,7 @@ jobs:
       - run: npm run feedback-check
       - run: npm run dist-check
       - run: npm run eval
+      - run: npm run test:worker
 
   # Every view in Chromium and WebKit against the production build, with the
   # API and cover art mocked (e2e/network.ts); see playwright.config.ts.

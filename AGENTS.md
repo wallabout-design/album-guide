@@ -23,6 +23,7 @@ Node 24, as CI uses. Run these before opening a PR. CI (`.github/workflows/ci.ym
 - `npm run lint`: oxlint
 - `npm run build`: type check and build to `dist/` (bundled catalog only). `npm run build:production` adds the Fly API address, as Workers Builds does
 - `npm run check`: server-render the app and assert its structure. Also `npm run click-check`, `npm run feedback-check`, `npm run dist-check` (after a build); none needs the network. `npm run api-wire-check` needs a local API, so CI skips it
+- `npm run test:worker`: the Worker's unit tests (`worker/tests/`)
 - `npm run lint:html`: html-validate on `dist/` (after a build)
 - `npm run test:e2e`: Playwright in Chromium and WebKit on every view (home, About, search, debug: `e2e/routes.ts`) against the production build: status 200, no console errors, no hosts but the mocked Fly API and cover art (`e2e/network.ts`), axe in light and dark, no horizontal scroll at 360 to 1440px. Run `npx playwright install chromium webkit` once first. Add a view to `e2e/routes.ts` when you add one
 - `npm run screenshots`: every view at each width, theme and browser into `screenshots/`; CI attaches them to the PR
