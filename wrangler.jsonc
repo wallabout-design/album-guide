@@ -6,6 +6,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "album-guide-site",
   // Runs only for /api/* (run_worker_first); everything else is static.
+  // Routes: worker/index.ts.
   "main": "./worker/index.ts",
   "compatibility_date": "2026-11-01",
   "assets": {
@@ -18,6 +19,10 @@
   // No routes yet: the album.guide custom domain is added once its zone is on
   // Cloudflare. workers.dev stays on because preview URLs live there.
   "workers_dev": true,
+  // First-party telemetry (standards/telemetry.md). The account's shared
+  // site_events dataset, keyed by site id "album-guide". Nothing is written
+  // until the TELEMETRY_SALT secret is set (docs/open-items.md).
+  "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "site_events" }],
   "preview_urls": true,
   "observability": { "enabled": true },
 }

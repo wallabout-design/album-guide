@@ -19,6 +19,8 @@ import './components/FeedbackLink.css';
 import App from './App.tsx';
 import { ToastHost } from './components/Toast';
 import { pendingMbids } from './engine/ingest';
+// First-party page views, engaged time and web vitals to /api/event.
+import './telemetry';
 
 // The ingest queue lives in localStorage; this is how it gets to the crawler:
 //   copy(segueQueue().join('\n'))   then   pbpaste | python3 scripts/ingest_mbids.py
