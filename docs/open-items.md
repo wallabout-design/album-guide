@@ -5,6 +5,11 @@ What's waiting on JJ, as of 2026-11-09, most urgent first. Only things an agent 
 ## now
 
 - [ ] **Merge `wallabout-design/site` PR #97** (registers album-guide in the portal): https://github.com/wallabout-design/site/pull/97. Merging applies the portal's production migration; the agent's merge was refused by a permission check as a production deploy. It's additive only (one site, four resources, one `rate_card` row), its checks are green and the preview migration is applied. Merge with `gh pr merge 97 --repo wallabout-design/site --squash`.
+- [ ] **Add album-guide to the `site feedback` routine.** Until then the routine holds feedback for album.guide (`processes/feedback-routine.md` in `wallabout-design/standards`). The agent's update of the routine was refused by a permission check (Account & Standing-Rule Changes). At https://claude.ai/code/routines/trig_01TskCJAGnZsxv55GK9oqQzB:
+  1. Add the repository `wallabout-design/album-guide`.
+  2. Add `album.guide` to the environment's network allowlist.
+
+  The routine reads its prompt from standards `main`, which already lists album-guide, so nothing needs pasting. The build-queue routine already covers album-guide (trigger `8254e5b7-1c80-407a-96d7-5f2f4254f785`, tested 2026-11-09).
 - [ ] **`TELEMETRY_SALT` for the Worker.** Until it's set, `/api/*` telemetry answers `204` and stores nothing, and the `telemetry` flag in `sites.json` stays `false`. Run:
   ```sh
   eval $(op signin)
