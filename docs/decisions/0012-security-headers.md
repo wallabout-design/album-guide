@@ -9,7 +9,7 @@ The site contract asks for a content security policy in the repo and `Strict-Tra
 ## decision
 
 - **The list is evidence.** `third-parties.json` holds what Playwright saw on https://album.guide on 2026-11-09 (load, shuffle, arrow-key moves, catalog search, a MusicBrainz search that added an album, About, `?feedback`, `/nope`; 375 and 1280 px): the Fly catalog API; Cover Art Archive, which redirects every cover and JSON listing to `archive.org` and numbered hosts such as `ia601808.us.archive.org` and `dn710703.ca.archive.org`, hence `https://*.archive.org`; MusicBrainz and ListenBrainz for search-driven ingest (`src/engine/ingest.ts`). Spotify, Apple Music and MusicBrainz page links are outbound links, not requests.
-- **One source.** `worker/security-headers.ts` builds the policy from `third-parties.json` and the Worker sets it, with the other headers, on every response: pages and files from `ASSETS`, the `www` redirect and `/api/*`. `public/_headers` carries the same values so static files stay covered if the Worker stops running first. `worker/tests/security-headers.test.ts` fails when `_headers` and the generated policy differ, and prints the line to copy.
+- **One source.** `worker/security-headers.ts` builds the policy from `third-parties.json` and the Worker sets it, with the other headers, on every response: pages and files from `ASSETS`, the `www` redirect and `/api/*`. `public/_headers` carries the same values so static files stay covered if the Worker stops running first. `worker/tests/security-headers.test.ts` fails when `_headers` and the generated policy differ, and prints the line to copy. The e2e allow-list (`e2e/network.ts`) reads the same file, and `e2e/site.spec.ts` checks every route's headers, with the policy enforced under `wrangler dev`.
 - **No `'unsafe-inline'` anywhere.** The only inline `<script>` is JSON-LD, a data block `script-src` doesn't govern. There are no `<style>` blocks; React `style` props go through the CSSOM, which `style-src` doesn't govern. This is stricter than site and rr, which allow inline styles.
 - **HSTS** one year with `includeSubDomains`, no `preload`, as site and rr.
 - Also `nosniff`, `strict-origin-when-cross-origin`, a permissions policy denying camera, microphone and geolocation, `Cross-Origin-Opener-Policy: same-origin` and `frame-ancestors 'none'`, as site and rr. Hashed `/assets/*` are cached for a year, as site.
@@ -24,6 +24,6 @@ The site contract asks for a content security policy in the repo and `Strict-Tra
 
 ## revisit when
 
-- A new request host appears (a new API, an image source): add it to `third-parties.json`, copy the printed line into `public/_headers`, and add it to the e2e allow-list.
+- A new request host appears (a new API, an image source): add it to `third-parties.json`, copy the printed line into `public/_headers`, and add a mock for it in `e2e/network.ts` if a page load reaches it.
 - The Fly API moves to `album.guide/api/*`: drop its entry.
 - The Cloudflare Web Analytics beacon is off at the zone: the console error on album.guide goes away; nothing to change here.

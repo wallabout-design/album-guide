@@ -39,7 +39,7 @@ Node 24, as CI uses. Run these before opening a PR. CI (`.github/workflows/ci.ym
 - `public/`: brand assets; the rules are in `BRAND.md`.
 - `wrangler.jsonc` and `worker/`: the Cloudflare Worker `album-guide-site` that serves the site.
 - `src/monitoring.ts`: Sentry in the browser; nothing else imports it. Events go through `/api/sentry` (`worker/sentry.ts`). On a preview, `/?sentry-test=client` throws a test error (`docs/decisions/0011-sentry-setup.md`).
-- `third-parties.json`: every host the page may contact. It drives the content security policy (`worker/security-headers.ts`, copied into `public/_headers`; `npm run test:worker` fails if they differ). A new host means a new entry here (`docs/decisions/0012-security-headers.md`).
+- `third-parties.json`: every host the page may contact. It drives the content security policy (`worker/security-headers.ts`, copied into `public/_headers`; `npm run test:worker` fails if they differ) and the e2e allow-list (`e2e/network.ts`). A new host means a new entry here (`docs/decisions/0012-security-headers.md`).
 - `docs/business.md`: what the site is for. `docs/decisions/`: decision records; read them before changing hosting, the domain, publishing or error tracking, and add a new record to change one. `docs/open-items.md`: what's waiting on JJ.
 
 ## rules
