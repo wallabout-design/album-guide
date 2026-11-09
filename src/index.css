@@ -24,7 +24,7 @@
   --stage-near: #262523;
   --stage-far: #131211;
   --ink: #f5f3ee;
-  --ink-muted: rgba(245, 243, 238, 0.56);
+  --ink-muted: rgba(245, 243, 238, 0.68);
   --ink-faint: rgba(245, 243, 238, 0.3);
   --hairline: rgba(245, 243, 238, 0.14);
   --accent: #5a9bd8;
@@ -612,3 +612,13 @@ button { font: inherit; color: inherit; }
 .loading .tagline { font-size: clamp(15px, 4.4vw, 27px); }
 
 @media (max-width: 640px) { .tagline { white-space: normal; text-align: center; } }
+
+/* Read by screen readers, not shown. */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

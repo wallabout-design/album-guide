@@ -101,7 +101,7 @@ export function Debug({
   const stop = STOPS[Math.round(dial * (STOPS.length - 1))];
 
   return (
-    <div className="debug">
+    <aside className="debug" aria-label="Engine debug">
       <div className="debug__head">
         <b>debug</b>
         <span>
@@ -114,7 +114,7 @@ export function Debug({
       </div>
 
       <section>
-        <h4>focus</h4>
+        <h2>focus</h2>
         <table>
           <tbody>
             <tr><th>album</th><td>{current.title}</td></tr>
@@ -146,7 +146,7 @@ export function Debug({
           </tbody>
         </table>
 
-        <h4>vector</h4>
+        <h2>vector</h2>
         <div className="debug__axes">
           {AXES.map((a) => (
             <div key={a} className="debug__axis">
@@ -160,7 +160,7 @@ export function Debug({
       </section>
 
       <section>
-        <h4>offers</h4>
+        <h2>offers</h2>
         {branches.map((b) => (
           <div key={b.item.id} className="debug__offer">
             <div className="debug__offerhead">
@@ -217,7 +217,7 @@ export function Debug({
       </section>
 
       <section>
-        <h4>path ({trail.length})</h4>
+        <h2>path ({trail.length})</h2>
         <ol className="debug__path">
           {trail.map((t, i) => (
             <li key={`${t.id}-${i}`}>
@@ -229,7 +229,7 @@ export function Debug({
       </section>
 
       <section>
-        <h4>feedback ({fb.total})</h4>
+        <h2>feedback ({fb.total})</h2>
         {fb.total === 0 ? (
           <p className="debug__empty">
             Nothing judged yet. Press <kbd>g</kbd> good, <kbd>m</kbd> fine or{' '}
@@ -288,6 +288,6 @@ export function Debug({
         <br />
         <kbd>d</kbd> closes this
       </footer>
-    </div>
+    </aside>
   );
 }

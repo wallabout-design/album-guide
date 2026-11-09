@@ -1,6 +1,5 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { FeedbackLink } from '@wallabout-design/feedback/react';
 // Self-hosted so the app has no CDN dependency and works offline.
 //
 // Jost, and not casually. Its `a` is single-storey — a circle with a stem —
@@ -38,8 +37,6 @@ createRoot(document.getElementById('root')!, {
   <StrictMode>
     <ToastHost>
       <App />
-      {/* Hidden "send feedback" link for reviewers (?feedback turns it on). */}
-      <FeedbackLink siteId="album-guide" className="feedback-link" />
     </ToastHost>
   </StrictMode>,
 );

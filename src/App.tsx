@@ -11,6 +11,7 @@ import {
 } from './engine/recommend';
 import { Flow, type FlowCard } from './components/Flow';
 import { SearchBox } from './components/SearchBox';
+import { FeedbackLink } from '@wallabout-design/feedback/react';
 import { Die, ROLL_MS } from './components/Die';
 import { About } from './components/About';
 import { Feedback } from './components/Feedback';
@@ -581,7 +582,7 @@ export default function App() {
         </div>
       </header>
 
-      <div className="flow">
+      <main className="flow">
         <Flow cards={cards} />
 
 
@@ -635,7 +636,7 @@ export default function App() {
           <li><kbd>/</kbd> search</li>
           <li><kbd>g</kbd>/<kbd>m</kbd>/<kbd>x</kbd> rate</li>
         </ul>
-      </div>
+      </main>
 
       {showAbout && (
         <About onClose={() => setShowAbout(false)} onRestart={restart} />
@@ -661,6 +662,9 @@ export default function App() {
           onIngest={addIngested}
           onOpenChange={setSearchOpen}
         />
+        {/* Hidden "send feedback" link for reviewers (?feedback turns it on).
+            In the footer so it sits inside a landmark. */}
+        <FeedbackLink siteId="album-guide" className="feedback-link" />
       </footer>
     </div>
   );
