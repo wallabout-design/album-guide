@@ -1,0 +1,74 @@
+name: Production checks
+
+# Loads the live site four times a day (e2e/production.spec.ts, against the real
+# API and cover art) and opens an issue when a check fails; the next passing run
+# closes it. Read-only: the one POST is a telemetry event the Worker drops,
+# because every request sends Sec-GPC: 1 (playwright.config.ts).
+# About 4 runs a day, roughly 2 minutes each: well inside the free Actions minutes.
+on:
+  schedule:
+    - cron: "37 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BASE_URL: https://album.guide
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - id: checks
+        run: npm run test:e2e -- --reporter=list,json
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: results.json
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            results.json
+          retention-days: 7
+      # Open an issue, or comment on the one already open.
+      - if: failure()
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            let failed = [];
+            try {
+              const walk = (s) => [...(s.specs ?? []).filter((t) => !t.ok).map((t) => t.title), ...(s.suites ?? []).flatMap(walk)];
+              failed = JSON.parse(fs.readFileSync('results.json', 'utf8')).suites.flatMap(walk);
+            } catch {}
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = `Production check failed on ${process.env.BASE_URL}.\n\n${failed.length ? failed.map((t) => `- ${t}`).join('\n') : '- (could not read the failing checks; see the run)'}\n\n[Run log](${run})`;
+            const { owner, repo } = context.repo;
+            const { data: open } = await github.rest.issues.listForRepo({ owner, repo, labels: 'production-check', state: 'open' });
+            if (open.length) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: open[0].number, body });
+            } else {
+              await github.rest.issues.create({ owner, repo, title: 'Production check failed', labels: ['production-check'], body });
+            }
+      # Passing again: close the open issue, saying which run passed.
+      - if: success()
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const { owner, repo } = context.repo;
+            const { data: open } = await github.rest.issues.listForRepo({ owner, repo, labels: 'production-check', state: 'open' });
+            for (const issue of open) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body: `Production checks pass again on ${process.env.BASE_URL}. [Run log](${run})` });
+              await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'closed', state_reason: 'completed' });
+            }
