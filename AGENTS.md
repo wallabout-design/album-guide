@@ -1,0 +1,56 @@
+# agent guide: wallabout-design/album-guide
+
+album.guide (https://album.guide): a public music discovery site. One album sits centre stage in a Cover Flow; two covers offer deliberately different roads onward. Read this first, then `docs/business.md` for what it is and how it runs, and `README.md` for how the catalog and the recommender work.
+
+This site follows the shared standards in `wallabout-design/standards` (`~/dev/wallabout/standards`): `standards/site-contract.md` is the checklist, and `sites.json` records what album-guide has adopted.
+
+Clone: `git clone https://github.com/wallabout-design/album-guide.git` (moved from `jj-noonan/album-guide` on 2026-11-08; `docs/decisions/0001-transfer-to-wallabout-design.md`).
+
+## the main checkout is live
+
+`~/dev/album-guide` is not an ordinary checkout. `scripts/run_jobs.sh` runs from it around the clock, and it holds the only copies of the gitignored `.env` (API credentials), `.venv` and `data/*.sqlite` (the crawl database, about 300 MB).
+
+- Never edit, switch branches, stash, clean or reset there, and never stop the jobs. The only commands allowed in it are `git pull --ff-only` and `git remote set-url`.
+- Work in your own worktree (`~/dev/AGENTS.md`, "One worktree per session"): `git -C ~/dev/album-guide worktree add --no-track -b <branch> ../album-guide-<name> origin/main`, then `npm ci`.
+- The venv's script shebangs broke when the folder was renamed from `music-recs`. Use `.venv/bin/python -m pip`, never `.venv/bin/pip`.
+- A worktree has no `.venv` or database. Node checks work there; Python jobs that need the database run only in the main checkout, by JJ.
+
+## commands
+
+Node 22. Run these before opening a PR; CI runs the same once it exists.
+
+- `npx tsc -b`: type check
+- `npm run lint`: oxlint
+- `npm run build`: type check and build to `dist/` (bundled catalog only). `npm run build:production` adds the Fly API address, as Workers Builds does
+- `npm run check`: server-render the app and assert its structure. Also `npm run click-check`, `npm run feedback-check`, `npm run dist-check` (after a build) and `npm run api-wire-check`; none needs the network
+- `npm run dev`: local dev at http://localhost:5173, on the bundled catalog
+- `npm run walk`, `npm run eval`, `npm run reach`: judge a change to the recommender (`README.md`)
+- `bash scripts/publish.sh --dry-run`: check the publish flow without pushing (`docs/decisions/0006-publish-through-a-pr.md`)
+
+## where things are
+
+- `src/`: the React app. `src/data/` holds the bundled catalog (`catalog.json`), the corridors, the lexicon and the schema.
+- `scripts/`: the Python crawler and backfills (run in the main checkout only), the TypeScript checks, `publish.sh` and `run_jobs.sh`.
+- `api/`: the read-only catalog API that runs on Fly as `album-guide-api`. `DEPLOY.md` covers it.
+- `public/`: brand assets; the rules are in `BRAND.md`.
+- `wrangler.jsonc` and `worker/`: the Cloudflare Worker `album-guide-site` that serves the site.
+- `docs/business.md`: what the site is for. `docs/decisions/`: decision records; read them before changing hosting, the domain, publishing or error tracking, and add a new record to change one. `docs/open-items.md`: what's waiting on JJ.
+
+## rules
+
+- **Never push to `main`.** Branch, open a PR, wait for its checks, then `gh pr merge --squash`. `main` has the "Protect main" ruleset (`docs/decisions/0008-protect-main.md`). This includes catalog snapshots: `scripts/publish.sh` publishes through a PR.
+- One concern per PR. Stage explicit paths, never `git add -A`.
+- **The Fly API is JJ's.** `album-guide-api` lives in JJ's personal Fly org with manual deploys. Agents never run `fly deploy`, change its secrets or scale it, and never run `publish.sh` for real (its last step deploys the API).
+- Never commit `.env`, secrets or anything in `data/*.sqlite`.
+- The repo is public: nothing private in code, docs, issues or PRs (no costs, emails, account IDs beyond what's already public, or secrets).
+- When this site adopts or drops part of the shared standard, update `sites.json` in `wallabout-design/standards` in the same piece of work.
+
+## deploying
+
+Workers Builds builds every push with `npm run build:production` (it sets `VITE_API_BASE` to the Fly API). `main` runs `npx wrangler deploy` to production; every other branch runs `npx wrangler versions upload` to a preview URL, `https://<branch>-album-guide-site.jj-23b.workers.dev`. Merging a PR deploys it, so these rules apply to merging.
+
+- Merge without asking for copy, styling, layout, brand assets, docs and recommender tuning, with every check green and the change checked on the branch preview at mobile and desktop widths.
+- Bug fixes and monitoring or tooling changes may be merged without asking, once tested on the branch preview with every check green.
+- Ask JJ before merging anything touching `wrangler.jsonc` or the Worker, the domain or DNS, the API contract with `album-guide-api`, secrets, or anything where a check failed or was skipped, unless an issue JJ labelled `ready-to-build` asks for it (next rule; `~/dev/AGENTS.md`).
+- **Except when the PR does what an issue JJ labelled `ready-to-build` asks.** That label is JJ's approval, so merge once every check is green and it's tested. Still label it `needs-review` and wait when it goes beyond the issue, a check failed or was skipped, or it needs a step only JJ can do (a secret, a Fly deploy).
+- In the report, say whether it was merged (and so deployed) or is waiting for approval.

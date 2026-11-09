@@ -1,13 +1,59 @@
-# Deploying the API to Fly.io
+# Deploying album.guide
+
+Two things deploy, in different ways:
+
+| | the site | the catalog API |
+| --- | --- | --- |
+| what | static Vite build, Worker `album-guide-site` | Python server, Fly app `album-guide-api` |
+| where | https://album.guide (until the custom domain is live, https://album-guide-site.jj-23b.workers.dev) | https://album-guide-api.fly.dev |
+| how | Workers Builds, on every push | `fly deploy`, by hand |
+| who | anyone who merges a PR | JJ only |
+
+## The site: Cloudflare Workers
+
+Hosting is Workers static assets (`wrangler.jsonc`;
+`docs/decisions/0002-hosting.md`). Workers Builds is connected to this repo
+and builds every push with `npm run build:production`, which sets
+`VITE_API_BASE=https://album-guide-api.fly.dev`:
+
+- **`main` deploys production** with `npx wrangler deploy`. Merging a PR is the deploy. `main` is
+  protected, so nothing reaches it except through a PR.
+- **Every other branch gets a preview** with `npx wrangler versions upload`, at
+  `https://<branch>-album-guide-site.jj-23b.workers.dev` (branch lowercased,
+  other characters turned into `-`). A PR shows a Workers Builds check; a
+  failed build's log is in the Cloudflare dashboard, linked from the check.
+- There is no separate preview Worker: the site has no data a preview could
+  touch, and previews call the same read-only API.
+
+DNS for `album.guide` is on Cloudflare; the registration stays at Gandi
+(`docs/decisions/0003-domain.md`). `www.album.guide` redirects to the apex.
+
+**Rolling back:** `npx wrangler rollback --name album-guide-site` restores the
+previous version; or revert the PR and merge the revert.
+
+**Deploying by hand** is only for when Workers Builds is broken:
+`npm run deploy` (`build:production`, then `wrangler deploy`), from a worktree on an up-to-date
+`main`.
+
+GitHub Pages (`jj-noonan.github.io/album-guide/`, `.github/workflows/deploy.yml`)
+is being retired once the Worker serves album.guide. Don't add a `public/CNAME`
+or a Pages workflow back.
+
+## The API: Fly.io (JJ only)
+
+The Fly app lives in JJ's personal Fly organization and is deployed by hand.
+Agents don't deploy it, change its secrets or scale it.
 
 The API is a read-only catalog server. The database is baked into the image,
 so there is no volume, no database service, and no state that can drift from
 what is in git — "update the data" and "deploy" are the same action, and a
-machine that dies is replaced from the image with nothing lost.
+machine that dies is replaced from the image with nothing lost. It serves CORS
+`*`, so production and every preview can call it.
 
-Everything below is run from the repo root.
+Everything below is run from the repo root of the main checkout, which holds
+the crawl database.
 
-## One-time setup
+### One-time setup (done)
 
 **1. Install flyctl**
 
@@ -40,7 +86,7 @@ If that name is taken, pick another and change `app` at the top of `fly.toml`
 to match. `--copy-config` makes it use the `fly.toml` already in the repo
 rather than generating one and overwriting the settings.
 
-## Deploy
+### Deploy
 
     fly deploy
 
@@ -60,7 +106,7 @@ Joni Mitchell is a good test precisely because she has zero albums in the
 bundled catalog the site ships today. If she comes back, the API is serving
 something the site cannot.
 
-## After significant catalog growth
+### After significant catalog growth
 
 `data/engine-constants.json` holds the axis spreads and tag informativeness,
 computed over the whole database. They drift as the catalog grows, and nothing
@@ -76,15 +122,20 @@ Do this after adding tens of thousands of albums, not after every crawl. A few
 thousand new records move the statistics by very little, and the eval cannot
 resolve a change smaller than about four points anyway.
 
-## Updating the data after a crawl
+### Updating the data after a crawl
+
+    npm run publish
+
+`scripts/publish.sh` lands the new bundled snapshot through a PR, then
+rebuilds the API database and runs `fly deploy`, so both halves serve the same
+catalog (`docs/decisions/0006-publish-through-a-pr.md`). To redeploy only the
+API:
 
     .venv/bin/python api/make-api-db.py
-    fly deploy
-
-That is the whole procedure. The old image is kept, so `fly releases` and
+    fly deploy The old image is kept, so `fly releases` and
 `fly deploy --image <previous>` will roll back if a bad export ships.
 
-## What it costs
+### What it costs
 
 `fly.toml` sets `auto_stop_machines`, `min_machines_running = 0` and a 256 MB
 shared-CPU machine, so the app sleeps when idle and wakes on the next request.
@@ -97,7 +148,7 @@ dollars a month more.
 256 MB is comfortable despite the 125 MB database: SQLite memory-maps the file
 and reads pages on demand rather than loading it.
 
-## Useful commands
+### Useful commands
 
     fly logs                 # live logs
     fly status               # machines, health, current release
@@ -106,7 +157,7 @@ and reads pages on demand rather than loading it.
     fly scale memory 512     # if it ever gets OOM-killed
     fly apps destroy <name>  # remove everything
 
-## Things that will bite
+### Things that will bite
 
 **The app is unreachable but deploy succeeded.** The server must bind
 `0.0.0.0`, not `127.0.0.1`; bound to localhost a machine passes its own health
@@ -122,13 +173,12 @@ copies exactly the paths the Dockerfile names into an empty directory and
 starts the server from them. This has caught the failure twice; both times the
 ordinary checks passed, because locally the whole repo is on disk.
 
-**The machine starts and dies immediately.** The image copies exactly the
+**Why it dies.** The image copies exactly the
 files the server opens: `api/server.py`, `api/engine.py`, `data/lexicon.json`,
 `data/engine-constants.json` and the database. Adding a runtime dependency
 without adding a COPY line builds cleanly and fails on first import — a deploy
 that reports success and a machine that never answers. To check before
-deploying, copy just those paths into an empty directory and run the server
-there.
+deploying, run `npm run image-check` (above).
 
 **Health checks fail after a data update.** `/v1/health` counts rows, so it
 fails if `catalog-api.sqlite` is missing or truncated — which is the point.
