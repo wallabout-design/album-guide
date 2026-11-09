@@ -27,21 +27,16 @@ const ALLOWED_HOSTS = [
 const allowed = (host: string) => ALLOWED_HOSTS.some((a) => host === a || host.endsWith(`.${a}`));
 
 /*
- * Known production conditions, each allowed by name and nothing wider:
+ * A known production condition, allowed by name and nothing wider:
  *
- * - RUM_BEACON: Cloudflare injects its Web Analytics beacon into every page on
- *   album.guide, and the CSP blocks it, which logs one CSP error per load.
- *   Turning it off is JJ's step (docs/open-items.md); remove this allowance then.
  * - API 5xx: the API sometimes answers /v1/recs with a 500, and the app falls
  *   back to the bundled catalog, as it is built to. The browser logs the failed
  *   request. Whether the API is up is checked on its own, below.
  */
-const RUM_BEACON = 'static.cloudflareinsights.com';
-const isRumBeaconBlocked = (text: string) => text.includes('Content Security Policy') && text.includes(RUM_BEACON);
 const isApi5xx = (text: string, source: string) =>
   /status of 5\d\d/.test(text) && source !== '' && new URL(source).hostname === API_HOST;
 
-/** Console errors, page errors, and requests to hosts the site doesn't use, less the allowances above. */
+/** Console errors, page errors, and requests to hosts the site doesn't use, less the allowance above. */
 function watch(page: Page, baseURL: string) {
   const errors: string[] = [];
   const external: string[] = [];
@@ -49,13 +44,13 @@ function watch(page: Page, baseURL: string) {
   page.on('console', (msg) => {
     if (msg.type() !== 'error') return;
     const text = msg.text();
-    if (isRumBeaconBlocked(text) || isApi5xx(text, msg.location().url ?? '')) return;
+    if (isApi5xx(text, msg.location().url ?? '')) return;
     errors.push(text);
   });
   page.on('pageerror', (err) => errors.push(err.message));
   page.on('request', (req) => {
     const url = new URL(req.url().replace(/^blob:/, ''));
-    if (url.host === local || url.protocol === 'data:' || url.hostname === RUM_BEACON) return;
+    if (url.host === local || url.protocol === 'data:') return;
     if (!allowed(url.hostname)) external.push(req.url());
   });
   return { errors, external };

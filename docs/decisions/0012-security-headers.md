@@ -14,7 +14,7 @@ The site contract asks for a content security policy in the repo and `Strict-Tra
 - **HSTS** one year with `includeSubDomains`, no `preload`, as site and rr.
 - Also `nosniff`, `strict-origin-when-cross-origin`, a permissions policy denying camera, microphone and geolocation, `Cross-Origin-Opener-Policy: same-origin` and `frame-ancestors 'none'`, as site and rr. Hashed `/assets/*` are cached for a year, as site.
 - **No report endpoint.** rr logs violations at `/api/csp-report`; here the enforced policy plus the Playwright checks are enough for a static page with no user data. Add one if a violation is ever suspected in production.
-- **Cloudflare Web Analytics is not allowed.** The zone injects `static.cloudflareinsights.com/beacon.min.js` into pages served on album.guide (not on `workers.dev` previews). The site has first-party telemetry (`0009-telemetry.md`), so the beacon should be turned off at the zone rather than allowed; until it is, the policy blocks it and the browser logs one CSP error per page load on album.guide.
+- **Cloudflare Web Analytics is not allowed.** The zone injects `static.cloudflareinsights.com/beacon.min.js` into pages served on album.guide (not on `workers.dev` previews). The site has first-party telemetry (`0009-telemetry.md`), so the beacon should be turned off at the zone rather than allowed. JJ turned it off on 2026-11-09 (Web Analytics site added for album.guide, automatic setup disabled, as for rr and wallabout.design).
 
 ## alternatives
 
