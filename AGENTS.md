@@ -21,7 +21,7 @@ Node 22. Run these before opening a PR; CI runs the same once it exists.
 
 - `npx tsc -b`: type check
 - `npm run lint`: oxlint
-- `npm run build`: type check and production build to `dist/`
+- `npm run build`: type check and build to `dist/` (bundled catalog only). `npm run build:production` adds the Fly API address, as Workers Builds does
 - `npm run check`: server-render the app and assert its structure. Also `npm run click-check`, `npm run feedback-check`, `npm run dist-check` (after a build) and `npm run api-wire-check`; none needs the network
 - `npm run dev`: local dev at http://localhost:5173, on the bundled catalog
 - `npm run walk`, `npm run eval`, `npm run reach`: judge a change to the recommender (`README.md`)
@@ -47,10 +47,10 @@ Node 22. Run these before opening a PR; CI runs the same once it exists.
 
 ## deploying
 
-Workers Builds deploys `main` to production and builds every branch to a preview URL, `https://<branch>-album-guide-site.jj-23b.workers.dev`. Merging a PR deploys it, so these rules apply to merging.
+Workers Builds builds every push with `npm run build:production` (it sets `VITE_API_BASE` to the Fly API). `main` runs `npx wrangler deploy` to production; every other branch runs `npx wrangler versions upload` to a preview URL, `https://<branch>-album-guide-site.jj-23b.workers.dev`. Merging a PR deploys it, so these rules apply to merging.
 
 - Merge without asking for copy, styling, layout, brand assets, docs and recommender tuning, with every check green and the change checked on the branch preview at mobile and desktop widths.
 - Bug fixes and monitoring or tooling changes may be merged without asking, once tested on the branch preview with every check green.
-- Ask JJ before merging anything touching `wrangler.jsonc` or the Worker, the domain or DNS, the API contract with `album-guide-api`, secrets, or anything where a check failed or was skipped.
+- Ask JJ before merging anything touching `wrangler.jsonc` or the Worker, the domain or DNS, the API contract with `album-guide-api`, secrets, or anything where a check failed or was skipped, unless an issue JJ labelled `ready-to-build` asks for it (next rule; `~/dev/AGENTS.md`).
 - **Except when the PR does what an issue JJ labelled `ready-to-build` asks.** That label is JJ's approval, so merge once every check is green and it's tested. Still label it `needs-review` and wait when it goes beyond the issue, a check failed or was skipped, or it needs a step only JJ can do (a secret, a Fly deploy).
 - In the report, say whether it was merged (and so deployed) or is waiting for approval.

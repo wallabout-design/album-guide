@@ -9,7 +9,8 @@ The site was a static build on GitHub Pages, deployed by `.github/workflows/depl
 ## decision
 
 - One Worker, `album-guide-site`, serving the Vite build (`dist/`) as Workers static assets. Config in `wrangler.jsonc`, with `observability.enabled`. The Worker code runs only for `/api/*` (telemetry, the Sentry tunnel); everything else is static.
-- **Workers Builds** deploys `main` to production and uploads every other branch as a preview version at `https://<branch>-album-guide-site.jj-23b.workers.dev`.
+- **Workers Builds** builds every push with `npm run build:production`. On `main` it runs `npx wrangler deploy` (production); on every other branch, `npx wrangler versions upload`, a preview version at `https://<branch>-album-guide-site.jj-23b.workers.dev`.
+- The production API address (`VITE_API_BASE=https://album-guide-api.fly.dev`) lives in the `build:production` script in `package.json`. A plain `npm run build` has no API address and runs on the bundled catalog alone.
 - **No separate preview Worker.** Previews are versions of the production Worker.
 - The catalog API stays on Fly as `album-guide-api` (JJ's, manual deploys; `DEPLOY.md`). It serves CORS `*`, so previews reach it unchanged.
 - GitHub Pages is turned off and `deploy.yml` deleted once the Worker serves the site.

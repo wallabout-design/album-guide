@@ -12,11 +12,13 @@ Two things deploy, in different ways:
 ## The site: Cloudflare Workers
 
 Hosting is Workers static assets (`wrangler.jsonc`;
-`docs/decisions/0002-hosting.md`). Workers Builds is connected to this repo:
+`docs/decisions/0002-hosting.md`). Workers Builds is connected to this repo
+and builds every push with `npm run build:production`, which sets
+`VITE_API_BASE=https://album-guide-api.fly.dev`:
 
-- **`main` deploys production.** Merging a PR is the deploy. `main` is
+- **`main` deploys production** with `npx wrangler deploy`. Merging a PR is the deploy. `main` is
   protected, so nothing reaches it except through a PR.
-- **Every other branch gets a preview** at
+- **Every other branch gets a preview** with `npx wrangler versions upload`, at
   `https://<branch>-album-guide-site.jj-23b.workers.dev` (branch lowercased,
   other characters turned into `-`). A PR shows a Workers Builds check; a
   failed build's log is in the Cloudflare dashboard, linked from the check.
@@ -30,7 +32,7 @@ DNS for `album.guide` is on Cloudflare; the registration stays at Gandi
 previous version; or revert the PR and merge the revert.
 
 **Deploying by hand** is only for when Workers Builds is broken:
-`npm run build && npx wrangler deploy`, from a worktree on an up-to-date
+`npm run deploy` (`build:production`, then `wrangler deploy`), from a worktree on an up-to-date
 `main`.
 
 GitHub Pages (`jj-noonan.github.io/album-guide/`, `.github/workflows/deploy.yml`)

@@ -40,8 +40,10 @@ Production is **https://album.guide** (until the custom domain is live,
 https://album-guide-site.jj-23b.workers.dev). Three pieces:
 
 **The site** is static, served by the Cloudflare Worker `album-guide-site` as
-Workers static assets (`wrangler.jsonc`). Workers Builds deploys it: merging to
-`main` deploys production, and every other branch gets a preview URL,
+Workers static assets (`wrangler.jsonc`). Workers Builds builds every push with
+`npm run build:production` (which sets the production API address); merging to
+`main` runs `npx wrangler deploy`, and every other branch runs
+`npx wrangler versions upload` for a preview URL,
 `https://<branch>-album-guide-site.jj-23b.workers.dev`. The Worker code runs
 only for `/api/*`; everything else is the Vite build. `main` is protected, so
 every change, catalog snapshots included, lands through a pull request. GitHub
