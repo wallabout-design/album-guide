@@ -14,11 +14,12 @@
 
 ## how it's served (2026-11-09, decided during the build)
 
-The zone went active at 05:00 UTC on 2026-11-09. Copied from `wallabout-design/site` (its `docs/runbooks/cloudflare.md`):
+The zone went active at 05:00 UTC on 2026-11-09, and `https://album.guide` went live at 05:12 with the next production deploy.
 
-- **Apex:** `"routes": [{ "pattern": "album.guide", "custom_domain": true }]` in `wrangler.jsonc`. The first production deploy creates the DNS record and certificate; nothing else may hold the apex name.
-- **`www`:** a proxied placeholder record `AAAA www 100::` and a zone Single Redirect (phase `http_request_dynamic_redirect`): `http.host eq "www.album.guide"` → 301 `concat("https://album.guide", http.request.uri.path)`, query string kept. Not a second custom domain with a host check in the Worker, as rr does: the Worker runs only for `/api/*` (`run_worker_first`), so that would mean running it for every request.
-- **Zone settings:** Always Use HTTPS on, minimum TLS 1.2, as on wallabout.design.
+- **Apex:** a Workers custom domain, `{ "pattern": "album.guide", "custom_domain": true }` in `wrangler.jsonc`. The deploy creates the DNS record and certificate.
+- **`www`:** also a custom domain on the same Worker, which answers it with a 301 to `https://album.guide` plus the same path and query (`worker/index.ts`), as `wallabout-design/rr` does. A host can't be matched by `run_worker_first`'s path list, so it is `true`: the Worker runs first for every request and hands everything outside `/api/*` to the `ASSETS` binding, which still serves `404.html` for unknown paths.
+- **Superseded plan:** a zone Single Redirect with a proxied `AAAA www 100::` placeholder, as on wallabout.design, which keeps the Worker off page requests. It was dropped because it lives in zone config rather than the repo, and the zone write was refused in the build session. The cost of the Worker approach is one Worker invocation per request, well inside the free plan.
+- HTTPS-only and HSTS come with the security headers (`public/_headers`), not zone settings.
 - The Gandi mail records (MX, SPF, DKIM, SRV, `webmail`) stay DNS-only and unchanged.
 
 ## why

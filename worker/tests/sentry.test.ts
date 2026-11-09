@@ -3,7 +3,7 @@
 // DSN is forwarded, and only from the site's own pages.
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
-import worker from '../index';
+import worker, { type Env } from '../index';
 import { MAX_ENVELOPE_BYTES } from '../sentry';
 import { SENTRY_DSN } from '../../src/sentry-config';
 
@@ -46,7 +46,8 @@ function post(body: string, headers: Record<string, string> = {}, path = '/api/s
   });
 }
 
-const env = {};
+// No telemetry bindings; ASSETS is never reached for /api/* requests.
+const env: Env = { ASSETS: { fetch: async () => new Response('asset') } as unknown as Fetcher };
 
 test("this project's envelope is forwarded to its Sentry ingest URL", async () => {
   const body = envelope(SENTRY_DSN);
