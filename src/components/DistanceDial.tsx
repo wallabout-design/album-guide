@@ -62,7 +62,6 @@ export function DistanceDial({ value, onChange }: Props) {
         className="dial__face"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        aria-label={`Terrain: ${STOPS[index].name}. Tap to change.`}
         title={`${STOPS[index].name} — ${STOPS[index].blurb}`}
       >
         <svg viewBox="0 0 100 62" aria-hidden="true">
@@ -84,6 +83,8 @@ export function DistanceDial({ value, onChange }: Props) {
           <line className="gauge__needle" x1="50" y1="50" x2={nx} y2={ny} strokeLinecap="round" />
           <circle className="gauge__hub" cx="50" cy="50" r="5.5" />
         </svg>
+        {/* Named by its visible text, so speech input can say what it sees. */}
+        <span className="visually-hidden">Terrain: </span>
         <span className="dial__name">{STOPS[index].name}</span>
       </button>
 

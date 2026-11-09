@@ -26,10 +26,10 @@ export function About({ onClose, onRestart }: Props) {
       <div className="about__panel">
         <button className="about__close" onClick={onClose} aria-label="Close">×</button>
 
-        <header className="about__head">
+        <div className="about__head">
           <img src="/svg/logo-primary-reversed.svg" alt="album.guide" width={116} />
           <p className="tagline">A route through the albums you haven&rsquo;t <em>found</em> yet</p>
-        </header>
+        </div>
 
         <p className="about__lede">
           Streaming recommendations circle the densest corner of your taste and
@@ -37,7 +37,7 @@ export function About({ onClose, onRestart }: Props) {
         </p>
 
         <section>
-          <h3>The three roads</h3>
+          <h2>The three roads</h2>
           <dl>
             <dt><kbd>→</kbd> Wider</dt>
             <dd>Crosses into a bordering lineage. Still defensible, but it hands you off somewhere you weren't.</dd>
@@ -56,7 +56,7 @@ export function About({ onClose, onRestart }: Props) {
         </section>
 
         <section>
-          <h3>The terrain dial</h3>
+          <h2>The terrain dial</h2>
           <p>
             How far each step travels. It sets a <em>target</em> distance, not a
             maximum, so turning it up moves both offers outward rather than just
@@ -71,7 +71,7 @@ export function About({ onClose, onRestart }: Props) {
         </section>
 
         <section>
-          <h3>Where the records come from</h3>
+          <h2>Where the records come from</h2>
           <p>
             Crawled from <a href="https://musicbrainz.org" target="_blank" rel="noreferrer">MusicBrainz</a> and
             the <a href="https://coverartarchive.org" target="_blank" rel="noreferrer">Cover Art Archive</a>,
@@ -96,7 +96,7 @@ export function About({ onClose, onRestart }: Props) {
         </section>
 
         <section>
-          <h3>Deeper and wider</h3>
+          <h2>Deeper and wider</h2>
           <p>
             The two offers differ in <em>vocabulary</em>, not just distance.
             Among the records at the right remove, the one sharing more of this
@@ -115,7 +115,7 @@ export function About({ onClose, onRestart }: Props) {
         </section>
 
         <section>
-          <h3>Two scores behind every choice</h3>
+          <h2>Two scores behind every choice</h2>
           <p>
             <b>Popularity</b> is how many separate people reached for a record,
             not how many plays it has — raw plays are dominated by whoever put
@@ -137,7 +137,7 @@ export function About({ onClose, onRestart }: Props) {
         </section>
 
         <section>
-          <h3>Search</h3>
+          <h2>Search</h2>
           <p>
             Searching something the catalog lacks isn't a dead end: it's looked up
             live in MusicBrainz, and if it exists it's fetched and added on the
@@ -147,7 +147,7 @@ export function About({ onClose, onRestart }: Props) {
         </section>
 
         <section>
-          <h3>Telling it when it's wrong</h3>
+          <h2>Telling it when it's wrong</h2>
           <p>
             The three marks under the case rate what you're looking at:{' '}
             <kbd>g</kbd> good call, <kbd>m</kbd> fine but not for you,{' '}
@@ -169,10 +169,10 @@ export function About({ onClose, onRestart }: Props) {
           Start a fresh path
         </button>
 
-        <footer className="about__foot">
+        <div className="about__foot">
           Titles link to MusicBrainz. Play buttons open a search in Spotify or
           Apple Music — no account or login involved.
-        </footer>
+        </div>
       </div>
     </div>
   );

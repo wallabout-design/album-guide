@@ -15,6 +15,8 @@ const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></
 const g = globalThis as any;
 g.window = dom.window;
 g.document = dom.window.document;
+// The feedback link (in the app's footer) reads a bare `location`, as it can in a browser.
+g.location = dom.window.location;
 // Node 26 defines `navigator` as a getter-only global; redefine rather than assign.
 Object.defineProperty(g, 'navigator', { value: dom.window.navigator, configurable: true });
 g.HTMLElement = dom.window.HTMLElement;

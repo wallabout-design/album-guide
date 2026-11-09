@@ -1,6 +1,6 @@
 /*
  * The hidden "send feedback" link (wallabout-design/feedback; rendered in
- * src/main.tsx). Only reviewers who opened a page with ?feedback
+ * the footer in src/App.tsx). Only reviewers who opened a page with ?feedback
  * see it. Bottom right, below the search bar.
  */
 .feedback-link {
