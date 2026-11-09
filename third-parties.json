@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "catalog-api",
+      "purpose": "The catalog API, album-guide-api on Fly (JJ's app): random starts, recommendations and search",
+      "requirement": "README.md (Hosting), docs/decisions/0002-hosting.md",
+      "pages": ["/"],
+      "data_sent": "Album ids and search text; no cookies, no identifiers",
+      "csp": {
+        "connect-src": ["https://album-guide-api.fly.dev"]
+      },
+      "sets_cookies": false,
+      "approved": "2026-11-09, docs/decisions/0012-security-headers.md"
+    },
+    {
+      "id": "cover-art-archive",
+      "purpose": "Album covers. coverartarchive.org redirects every image and JSON listing to archive.org and its numbered storage hosts (ia*.us.archive.org, dn*.ca.archive.org), which change per file",
+      "requirement": "docs/decisions/0012-security-headers.md",
+      "pages": ["/"],
+      "data_sent": "The release-group id in the image URL; no cookies, no referrer beyond the origin",
+      "csp": {
+        "img-src": ["https://coverartarchive.org", "https://archive.org", "https://*.archive.org"],
+        "connect-src": ["https://coverartarchive.org", "https://archive.org", "https://*.archive.org"]
+      },
+      "sets_cookies": false,
+      "approved": "2026-11-09, docs/decisions/0012-security-headers.md"
+    },
+    {
+      "id": "musicbrainz",
+      "purpose": "Search for albums not yet in the catalog: the browser looks them up on MusicBrainz and adds them (src/engine/ingest.ts)",
+      "requirement": "src/engine/ingest.ts",
+      "pages": ["/"],
+      "data_sent": "The search text and the chosen release-group id",
+      "csp": {
+        "connect-src": ["https://musicbrainz.org"]
+      },
+      "sets_cookies": false,
+      "approved": "2026-11-09, docs/decisions/0012-security-headers.md"
+    },
+    {
+      "id": "listenbrainz",
+      "purpose": "Popularity for an album added from MusicBrainz search (src/engine/ingest.ts)",
+      "requirement": "src/engine/ingest.ts",
+      "pages": ["/"],
+      "data_sent": "The release-group id",
+      "csp": {
+        "connect-src": ["https://api.listenbrainz.org"]
+      },
+      "sets_cookies": false,
+      "approved": "2026-11-09, docs/decisions/0012-security-headers.md"
+    }
+  ]
+}
