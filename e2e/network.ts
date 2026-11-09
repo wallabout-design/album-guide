@@ -66,11 +66,20 @@ export async function guard(page: Page, baseURL: string) {
   });
   page.on('pageerror', (err) => errors.push(err.message));
 
-  await page.route('**/*', async (route) => {
+  /*
+   * Telemetry beacons get the 204 the Worker gives. `wrangler dev` loses
+   * beacon bodies from several WebKit pages at once ("Network connection lost"
+   * in its local proxy, then a 400), which production does not do. The
+   * endpoint itself is covered by `npm run test:worker`, and what the page
+   * sends by e2e/telemetry.spec.ts.
+   */
+  await page.route('**/api/event', (route) => route.fulfill({ status: 204 }));
+
+  // Other hosts only: intercepting the site's own requests would change them
+  // (WebKit drops a request's body when it is continued).
+  const local = new URL(baseURL).host;
+  await page.route((url) => url.host !== local, async (route) => {
     const raw = route.request().url();
-    if (raw.startsWith(baseURL) || raw.startsWith('data:') || raw.startsWith('blob:')) {
-      return route.continue();
-    }
     const url = new URL(raw);
     if (url.hostname === API_HOST) {
       api.push(raw);

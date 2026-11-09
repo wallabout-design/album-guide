@@ -5,30 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>album.guide — a route through the albums you haven't found yet</title>
     <meta name="description" content="Music discovery that travels past the obvious. Pick a cover, take a turn, and see where the road goes.">
+    <link rel="canonical" href="https://album.guide/">
+    <!-- The commit this page was built from, for the feedback link. -->
+    <meta name="build" content="%VITE_BUILD_SHA%">
 
-    <!-- Relative hrefs, not the absolute ones in the brand handoff.
-         The site is served from a GitHub Pages subpath today, where /favicon/…
-         resolves to the domain root and 404s. These work from a subpath and
-         from album.guide once it exists, without a rebuild. -->
-    <link rel="icon" href="./favicon/favicon.ico" sizes="any">
-    <link rel="icon" type="image/png" sizes="16x16" href="./favicon/favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="./favicon/favicon-32x32.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
-    <link rel="manifest" href="./site.webmanifest">
+    <!-- Root-relative: the site is served at the domain root. -->
+    <link rel="icon" href="/favicon/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
     <meta name="theme-color" content="#185FA5">
 
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="album.guide">
+    <meta property="og:url" content="https://album.guide/">
     <meta property="og:title" content="album.guide — a route through the albums you haven't found yet">
     <meta property="og:description" content="Music discovery that travels past the obvious. Pick a cover, take a turn, and see where the road goes.">
-    <!-- Pointed at where the site actually is. The handoff specifies
-         https://album.guide/… but that domain is not registered yet, and a
-         scraper cannot fetch an image from a domain that does not resolve —
-         social previews would simply be blank. Swap both when it is live. -->
-    <meta property="og:image" content="https://jj-noonan.github.io/album-guide/social/og-image.png">
+    <meta property="og:image" content="https://album.guide/social/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="album.guide: a route through the albums you haven't found yet">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://jj-noonan.github.io/album-guide/social/twitter-card.png">
+    <meta name="twitter:title" content="album.guide — a route through the albums you haven't found yet">
+    <meta name="twitter:description" content="Music discovery that travels past the obvious. Pick a cover, take a turn, and see where the road goes.">
+    <meta name="twitter:image" content="https://album.guide/social/twitter-card.png">
+    <meta name="twitter:image:alt" content="album.guide: a route through the albums you haven't found yet">
+
+    <!-- No SearchAction: search happens inside the app, with no search URL to point at. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://album.guide/#organization",
+            "name": "album.guide",
+            "url": "https://album.guide/",
+            "logo": "https://album.guide/icons/icon-512.png"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://album.guide/#website",
+            "name": "album.guide",
+            "url": "https://album.guide/",
+            "description": "Music discovery that travels past the obvious. Pick a cover, take a turn, and see where the road goes.",
+            "inLanguage": "en",
+            "publisher": { "@id": "https://album.guide/#organization" }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

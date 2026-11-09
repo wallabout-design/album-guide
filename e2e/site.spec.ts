@@ -9,11 +9,14 @@ for (const view of views) {
       const seen = await guard(page, baseURL!);
       await steady(page);
       const response = await page.goto(view.path, { waitUntil: 'networkidle' });
-      expect(response?.status()).toBe(200);
-      await ready(page);
+      const status = view.status ?? 200;
+      expect(response?.status()).toBe(status);
+      await (view.ready ?? ready)(page);
       await view.open?.(page);
       await page.waitForLoadState('networkidle');
-      expect(seen.errors).toEqual([]);
+      // A 404 page logs its own status as a console error, and nothing else may.
+      const expected = status === 404 ? ['Failed to load resource: the server responded with a status of 404 (Not Found)'] : [];
+      expect(seen.errors.filter((e) => !expected.includes(e))).toEqual([]);
       expect(seen.unexpected).toEqual([]);
       expect(seen.unmockedApi).toEqual([]);
       // The build points at the API (VITE_API_BASE), so the mock is what answered.
@@ -25,7 +28,7 @@ for (const view of views) {
         await guard(page, baseURL!);
         await steady(page, theme);
         await page.goto(view.path, { waitUntil: 'networkidle' });
-        await ready(page);
+        await (view.ready ?? ready)(page);
         await view.open?.(page);
         const results = await new AxeBuilder({ page })
           .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
@@ -42,7 +45,7 @@ for (const view of views) {
         await steady(page);
         await page.setViewportSize({ width, height: 900 });
         await page.goto(view.path, { waitUntil: 'networkidle' });
-        await ready(page);
+        await (view.ready ?? ready)(page);
         await view.open?.(page);
         const overflow = await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -65,4 +68,13 @@ test('falls back to the bundled catalog when the API is down', async ({ page, ba
   await expect(page.locator('.case').first()).toBeVisible();
   expect(seen.errors).toEqual([]);
   expect(seen.unexpected).toEqual([]);
+});
+
+test('robots.txt and sitemap.xml are served', async ({ request }) => {
+  const robots = await request.get('/robots.txt');
+  expect(robots.status()).toBe(200);
+  expect(await robots.text()).toContain('Sitemap: https://album.guide/sitemap.xml');
+  const sitemap = await request.get('/sitemap.xml');
+  expect(sitemap.status()).toBe(200);
+  expect(await sitemap.text()).toContain('<loc>https://album.guide/</loc>');
 });

@@ -14,6 +14,7 @@ import '@fontsource/jost/700.css';
 // Tokens first: the component styles below resolve --ag-* from here.
 import './brand-tokens.css';
 import './index.css';
+import './components/FeedbackLink.css';
 import App from './App.tsx';
 import { ToastHost } from './components/Toast';
 import { pendingMbids } from './engine/ingest';

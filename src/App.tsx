@@ -11,6 +11,7 @@ import {
 } from './engine/recommend';
 import { Flow, type FlowCard } from './components/Flow';
 import { SearchBox } from './components/SearchBox';
+import { FeedbackLink } from '@wallabout-design/feedback/react';
 import { Die, ROLL_MS } from './components/Die';
 import { About } from './components/About';
 import { Feedback } from './components/Feedback';
@@ -526,7 +527,7 @@ export default function App() {
     // stuck, so it must never be a dead end.
     return (
       <div className="loading">
-        <img className="loading__logo" src="./svg/logo-primary-reversed.svg" alt="album.guide" width={190} />
+        <img className="loading__logo" src="/svg/logo-primary-reversed.svg" alt="album.guide" width={190} />
         <p className="tagline">
           A route through the albums you haven&rsquo;t <em>found</em> yet
         </p>
@@ -556,7 +557,7 @@ export default function App() {
             onClick={() => setShowAbout(true)}
             title="What this is, and how to travel it"
           >
-            <img className="brand__mark" src="./svg/icon-lg-reversed.svg" alt="album.guide" width={64} height={64} />
+            <img className="brand__mark" src="/svg/icon-lg-reversed.svg" alt="album.guide" width={64} height={64} />
             <span className="brand__word">
               <span>album</span>
               <span>.guide</span>
@@ -661,6 +662,9 @@ export default function App() {
           onIngest={addIngested}
           onOpenChange={setSearchOpen}
         />
+        {/* Hidden "send feedback" link for reviewers (?feedback turns it on).
+            In the footer so it sits inside a landmark. */}
+        <FeedbackLink siteId="album-guide" className="feedback-link" />
       </footer>
     </div>
   );

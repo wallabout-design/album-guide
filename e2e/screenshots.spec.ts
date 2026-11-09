@@ -15,7 +15,7 @@ for (const view of views) {
         await steady(page, theme);
         await page.setViewportSize({ width, height: 900 });
         await page.goto(view.path, { waitUntil: 'networkidle' });
-        await ready(page);
+        await (view.ready ?? ready)(page);
         await view.open?.(page);
         await page.evaluate(() =>
           Promise.all([

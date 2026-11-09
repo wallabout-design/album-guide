@@ -1,8 +1,10 @@
 import { execSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig, type Connect, type Plugin } from 'vite'
 
-// The commit this build came from (7 characters), for telemetry (src/telemetry.ts).
+// The commit this build came from (7 characters), for telemetry (src/telemetry.ts)
+// and the pages' <meta name="build"> (the feedback link puts it in every note).
 // Workers Builds sets WORKERS_CI_COMMIT_SHA; locally, ask git. "dev" when
 // neither is available, which the Worker stores as an empty build.
 function buildSha(): string {
@@ -31,9 +33,20 @@ function telemetryStub(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Relative base: the same build works at jj-noonan.github.io/album-guide/ and at
-  // a custom domain later, with no rebuild and no path juggling.
-  base: './',
+  // Root-relative: the site is served at the domain root (album.guide, and
+  // *.workers.dev for previews). The 404 page is served at any depth, where
+  // relative asset URLs would resolve under the missing path and break
+  // (docs/decisions/0010-real-404-and-root-base.md).
+  base: '/',
   plugins: [react(), telemetryStub()],
+  // Also fills %VITE_BUILD_SHA% in index.html and 404.html (<meta name="build">).
   define: { 'import.meta.env.VITE_BUILD_SHA': JSON.stringify(buildSha()) },
+  build: {
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        notFound: fileURLToPath(new URL('./404.html', import.meta.url)),
+      },
+    },
+  },
 })

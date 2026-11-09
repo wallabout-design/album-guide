@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page not found · album.guide</title>
+    <meta name="description" content="There is no page at this address on album.guide.">
+    <meta name="robots" content="noindex">
+    <!-- The commit this page was built from, for feedback notes. -->
+    <meta name="build" content="%VITE_BUILD_SHA%">
+
+    <!-- Served at any missing path (wrangler.jsonc "404-page"), so every URL is root-relative. -->
+    <link rel="icon" href="/favicon/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <meta name="theme-color" content="#185FA5">
+    <link rel="stylesheet" href="/src/not-found.css">
+  </head>
+  <body>
+    <!-- Same look as the app's start screen (.loading in src/index.css). The mark, not
+         the lockup: the lockup SVG sets its word in live text, which an <img> renders
+         in a fallback face. -->
+    <main class="loading">
+      <a href="/"><img src="/svg/icon-lg-reversed.svg" alt="album.guide" width="64" height="64"></a>
+      <h1 class="tagline">This road doesn&rsquo;t go anywhere</h1>
+      <p>There&rsquo;s no page at this address.</p>
+      <a class="play" href="/">Back to album.guide</a>
+    </main>
+  </body>
+</html>

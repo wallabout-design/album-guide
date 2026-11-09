@@ -9,12 +9,6 @@ export async function ready(page: Page) {
   await expect(page.locator('main .plate__title')).not.toBeEmpty({ timeout: 20_000 });
 }
 
-/*
- * Every view the site has. album.guide is one page: there is no router, no
- * hash routes and no query views (src/App.tsx), so "/" is the only URL. The
- * About and search panels and the debug panel open over it from the page
- * itself, so each is checked as its own view.
- */
 /**
  * Waits for finite CSS animations and transitions to finish, so axe and the
  * screenshots see a panel at full opacity rather than mid-fade.
@@ -27,15 +21,41 @@ export async function settle(page: Page) {
   );
 }
 
+/*
+ * Every view the site has. album.guide is one page with no router (src/App.tsx):
+ * "/" is the app, "?feedback" turns on the hidden feedback link, and any other
+ * path gets the 404 page (404.html, wrangler.jsonc "404-page"). The About,
+ * search and debug panels open over the app from the page itself, so each is
+ * checked as its own view.
+ */
 export interface View {
   name: string;
   path: string;
+  /** The status the path answers with; 200 unless given. */
+  status?: number;
+  /** Waits for the page to be ready; the app's first album unless given. */
+  ready?: (page: Page) => Promise<void>;
   /** Opens the view once the page has loaded. */
   open?: (page: Page) => Promise<void>;
 }
 
 export const views: View[] = [
   { name: 'home', path: '/' },
+  {
+    name: 'feedback',
+    path: '/?feedback',
+    open: async (page) => {
+      await expect(page.getByRole('link', { name: 'send feedback' })).toBeVisible();
+    },
+  },
+  {
+    name: 'not-found',
+    path: '/nope/deep',
+    status: 404,
+    ready: async (page) => {
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    },
+  },
   {
     name: 'about',
     path: '/',
