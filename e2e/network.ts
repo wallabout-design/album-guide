@@ -1,20 +1,32 @@
 import { deflateSync, crc32 } from 'node:zlib';
 import type { Page } from '@playwright/test';
+import thirdParties from '../third-parties.json' with { type: 'json' };
 
 /*
- * The only hosts the page may talk to besides itself. Each one is mocked here,
+ * The hosts the page may talk to besides itself come from third-parties.json,
+ * the same list the content security policy is built from
+ * (worker/security-headers.ts). The ones a page load touches are mocked here,
  * so the tests never reach the network and every run sees the same thing:
  *
  * - album-guide-api.fly.dev, the catalog API. It answers "nothing to add" to
  *   every call, which is the path the app takes when the API is down: the
  *   bundled catalog (src/data/catalog.json) carries on alone (src/data/api.ts).
- * - coverartarchive.org and archive.org, where the cover art lives. Each cover
- *   is the same plain grey square, so screenshots don't depend on the archive.
+ * - the img-src hosts (Cover Art Archive and archive.org), where the cover art
+ *   lives. Each cover is the same plain grey square, so screenshots don't
+ *   depend on the archive.
  *
- * Any other host is aborted and reported as unexpected.
+ * Any other host is aborted and reported as unexpected, including listed hosts
+ * with no mock here (MusicBrainz and ListenBrainz, used only by search ingest).
  */
+type ThirdParty = { csp: Record<string, string[]> };
+const hostsFor = (directive: string) =>
+  (thirdParties.entries as ThirdParty[])
+    .flatMap((e) => e.csp[directive] ?? [])
+    .map((src) => new URL(src.replace('*.', '')).hostname);
+
 export const API_HOST = 'album-guide-api.fly.dev';
-const IMAGE_HOSTS = ['coverartarchive.org', 'archive.org'];
+if (!hostsFor('connect-src').includes(API_HOST)) throw new Error(`${API_HOST} is missing from third-parties.json`);
+const IMAGE_HOSTS = [...new Set(hostsFor('img-src'))];
 
 const matches = (host: string, allowed: string) => host === allowed || host.endsWith(`.${allowed}`);
 
