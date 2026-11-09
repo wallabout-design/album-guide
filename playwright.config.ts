@@ -19,8 +19,7 @@ export default defineConfig({
   // The production build, pointed at the production API as deploys are; the
   // tests mock the API (e2e/network.ts), so nothing reaches Fly.
   webServer: {
-    command: `npm run build && npx vite preview --port ${port} --strictPort`,
-    env: { VITE_API_BASE: 'https://album-guide-api.fly.dev' },
+    command: `npm run build:production && npx vite preview --port ${port} --strictPort`,
     url: `http://localhost:${port}`,
     // Never reuse: a stray server would serve a stale build and still pass.
     reuseExistingServer: false,

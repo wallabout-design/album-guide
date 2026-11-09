@@ -19,3 +19,6 @@ data/parity-ts.json
 screenshots/
 playwright-report/
 test-results/
+
+# Wrangler local state (wrangler dev)
+.wrangler/
