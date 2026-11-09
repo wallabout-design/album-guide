@@ -1,6 +1,6 @@
 import { test } from '@playwright/test';
 import { guard, steady } from './network';
-import { themes, views, widths } from './routes';
+import { ready, themes, views, widths } from './routes';
 
 // A visual record of every view for reviewers, not a pass/fail check, so it
 // only runs with SCREENSHOTS=1 (`npm run screenshots`; CI has its own job).
@@ -15,6 +15,7 @@ for (const view of views) {
         await steady(page, theme);
         await page.setViewportSize({ width, height: 900 });
         await page.goto(view.path, { waitUntil: 'networkidle' });
+        await ready(page);
         await view.open?.(page);
         await page.evaluate(() =>
           Promise.all([

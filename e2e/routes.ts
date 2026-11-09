@@ -1,4 +1,13 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+
+/**
+ * Waits until the app has rendered its first album. The bundle carries an 8 MB
+ * catalog, so on a slow CI machine the network goes idle well before React has
+ * parsed it and attached its key handlers.
+ */
+export async function ready(page: Page) {
+  await expect(page.locator('main .plate__title')).not.toBeEmpty({ timeout: 20_000 });
+}
 
 /*
  * Every view the site has. album.guide is one page: there is no router, no
