@@ -17,9 +17,11 @@
     <link rel="stylesheet" href="/src/not-found.css">
   </head>
   <body>
-    <!-- Same look as the app's start screen (.loading in src/index.css). -->
+    <!-- Same look as the app's start screen (.loading in src/index.css). The mark, not
+         the lockup: the lockup SVG sets its word in live text, which an <img> renders
+         in a fallback face. -->
     <main class="loading">
-      <a href="/"><img class="loading__logo" src="/svg/logo-primary-reversed.svg" alt="album.guide" width="190" height="34"></a>
+      <a href="/"><img src="/svg/icon-lg-reversed.svg" alt="album.guide" width="64" height="64"></a>
       <h1 class="tagline">This road doesn&rsquo;t go anywhere</h1>
       <p>There&rsquo;s no page at this address.</p>
       <a class="play" href="/">Back to album.guide</a>
