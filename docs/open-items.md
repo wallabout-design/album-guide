@@ -31,6 +31,8 @@ What's waiting on JJ, as of 2026-11-08. Only things JJ has to do: accounts, secr
   2. **Inbound Filters**: turn on browser extensions, localhost, web crawlers and legacy browsers.
   3. **Security & Privacy**: turn on **Prevent storing of IP addresses** and the data scrubber.
 
+- [ ] **Turn off Cloudflare Web Analytics injection on album.guide.** Cloudflare adds `static.cloudflareinsights.com/beacon.min.js` (token `907e7286…`) to every page, an external request the site contract forbids, so the production checks (`docs/decisions/0013-production-checks.md`) fail on `/` and the 404 page. The zone's `rum` setting already reads `off` and the account lists no Web Analytics site for album.guide; an agent's attempt to create the site and disable it, as rr and wallabout.design have it, was refused by the permission check. By hand: Cloudflare dashboard → album.guide → **Analytics & Logs → Web Analytics** → disable it (or **Manage site** → automatic setup **Disable**). Check: `gh workflow run production-checks.yml -R wallabout-design/album-guide` passes and closes the open `production-check` issue.
+
 ## approvals
 
 - [ ] **Portal production migration.** The `wallabout-design/site` PR that registers album-guide in the portal is labelled `needs-review`: PR link to come. Merge it, then run the production migration from `portal/` (`npm run migrate`).
