@@ -35,6 +35,11 @@ What's waiting on JJ, as of 2026-11-09, most urgent first. Only things an agent 
   3. **Security & Privacy**: turn on **Prevent storing of IP addresses** and the data scrubber.
 - [ ] **Turn off Cloudflare Web Analytics injection on album.guide.** Cloudflare adds `static.cloudflareinsights.com/beacon.min.js` (token `907e7286…`) to every page. The CSP blocks it, so every page load logs one CSP console error, and the production checks (`docs/decisions/0013-production-checks.md`) carry a named allowance for it until it's gone. The zone's `rum` setting already reads `off` and the account lists no Web Analytics site for album.guide; an agent's attempt to create the site and disable it, as rr and wallabout.design have it, was refused by the permission check. By hand: Cloudflare dashboard → album.guide → **Analytics & Logs → Web Analytics** → disable it (or **Manage site** → automatic setup **Disable**). Then ask a session to remove `RUM_BEACON` from `e2e/production.spec.ts`.
 
+- [ ] **Google Search Console for album.guide** (`standards/site-contract.md`, Search Console row; decision 0005 says search matters here). It needs JJ's Google account, and a DNS TXT record; agents' DNS writes on the zone were refused by the permission check.
+  1. https://search.google.com/search-console → **Add property** → **Domain** → `album.guide`. Copy the `google-site-verification=…` TXT value.
+  2. Cloudflare dashboard → album.guide → **DNS** → add a `TXT` record on `@` with that value, then press **Verify** in Search Console.
+  3. **Sitemaps** → submit `https://album.guide/sitemap.xml`. Check coverage after one and four weeks.
+
 ## later
 
 - [ ] **By 2028-09: decide whether to renew album.guide** (auto-renew is off; `DEPLOY.md`).
