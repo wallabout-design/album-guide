@@ -1,9 +1,10 @@
 # open items
 
-What's waiting on JJ, as of 2026-11-08. Only things JJ has to do: accounts, secrets, approvals, decisions. Tick or remove an item when it's done.
+What's waiting on JJ, as of 2026-11-09, most urgent first. Only things an agent can't do (`docs/decisions/0014-what-waits-for-jj.md`): secrets and 1Password, spending money, the Fly app, destructive changes to production data, and actions a permission check refused. Agents decide and do everything else. Tick or remove an item when it's done.
 
-## secrets
+## now
 
+- [ ] **Merge `wallabout-design/site` PR #97** (registers album-guide in the portal): https://github.com/wallabout-design/site/pull/97. Merging applies the portal's production migration; the agent's merge was refused by a permission check as a production deploy. It's additive only (one site, four resources, one `rate_card` row), its checks are green and the preview migration is applied. Merge with `gh pr merge 97 --repo wallabout-design/site --squash`.
 - [ ] **`TELEMETRY_SALT` for the Worker.** Until it's set, `/api/*` telemetry answers `204` and stores nothing, and the `telemetry` flag in `sites.json` stays `false`. Run:
   ```sh
   eval $(op signin)
@@ -23,18 +24,11 @@ What's waiting on JJ, as of 2026-11-08. Only things JJ has to do: accounts, secr
      op item get "album-guide SENTRY_AUTH_TOKEN" --vault client-noonan --fields credential --reveal --format json | jq -r .value | tr -d '\n' | pbcopy
      ```
      Cloudflare dashboard → Workers & Pages → `album-guide-site` → Settings → Builds → **Variables and secrets** → add `SENTRY_AUTH_TOKEN`, type **Secret**, paste. Then `pbcopy < /dev/null`.
-
-## permissions
-
-- [ ] **Sentry limits and filters for `album-guide`** (`docs/decisions/0011-sentry-setup.md`). An agent's attempt to set the key's rate limit was refused by the permission check, so these are the same settings rr has, done by hand at https://wallabout-design-llc.sentry.io/settings/projects/album-guide/:
+- [ ] **Sentry limits and filters for `album-guide`** (`docs/decisions/0011-sentry-setup.md`). A permission check refused the agent's attempt to set these, so they're done by hand, the same as rr's, at https://wallabout-design-llc.sentry.io/settings/projects/album-guide/:
   1. **Client Keys (DSN)** → the key → **Rate limits**: 150 events per day.
   2. **Inbound Filters**: turn on browser extensions, localhost, web crawlers and legacy browsers.
   3. **Security & Privacy**: turn on **Prevent storing of IP addresses** and the data scrubber.
 
-## approvals
+## later
 
-- [ ] **Portal production migration.** The `wallabout-design/site` PR that registers album-guide in the portal is labelled `needs-review`: PR link to come. Merge it, then run the production migration from `portal/` (`npm run migrate`).
-
-## to check
-
-- [ ] **album.guide registration renewal at Gandi.** Registration stays at Gandi (`docs/decisions/0003-domain.md`). Check the expiry date and that auto-renew is on: https://admin.gandi.net/domain/ → album.guide
+- [ ] **By 2028-09: decide whether to renew album.guide** (auto-renew is off; `DEPLOY.md`).
