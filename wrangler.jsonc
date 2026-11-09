@@ -1,0 +1,23 @@
+// Cloudflare Workers static assets. Workers Builds builds every push: main
+// deploys to production, other branches upload a preview version with its own
+// URL. The site keeps no data of its own (the catalog API is album-guide-api on
+// Fly), so there is no separate preview Worker.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "album-guide-site",
+  // Runs only for /api/* (run_worker_first); everything else is static.
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    // The app routes in the browser, so unknown paths get index.html for now.
+    // A real 404 page comes with the search basics.
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
+  // No routes yet: the album.guide custom domain is added once its zone is on
+  // Cloudflare. workers.dev stays on because preview URLs live there.
+  "workers_dev": true,
+  "preview_urls": true,
+  "observability": { "enabled": true },
+}
