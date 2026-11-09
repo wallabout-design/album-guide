@@ -13,6 +13,7 @@ What's waiting on JJ, as of 2026-11-09, most urgent first. Only things an agent 
 - [ ] **`TELEMETRY_SALT` for the Worker.** Until it's set, `/api/*` telemetry answers `204` and stores nothing, and the `telemetry` flag in `sites.json` stays `false`. Run:
   ```sh
   eval $(op signin)
+  op vault list | grep -q client-noonan || op vault create client-noonan   # Noonan's vault (standards/accounts-and-access.md); didn't exist on 2026-11-09
   op item create --vault client-noonan --category=password --title="album-guide TELEMETRY_SALT" --generate-password='letters,digits,48'
   op item get "album-guide TELEMETRY_SALT" --vault client-noonan --fields password --reveal --format json | jq -r .value | tr -d '\n' | npx wrangler secret put TELEMETRY_SALT --name album-guide-site
   ```
