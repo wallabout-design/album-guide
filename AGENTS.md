@@ -34,6 +34,7 @@ Node 22. Run these before opening a PR; CI runs the same once it exists.
 - `api/`: the read-only catalog API that runs on Fly as `album-guide-api`. `DEPLOY.md` covers it.
 - `public/`: brand assets; the rules are in `BRAND.md`.
 - `wrangler.jsonc` and `worker/`: the Cloudflare Worker `album-guide-site` that serves the site.
+- `src/monitoring.ts`: Sentry in the browser; nothing else imports it. Events go through `/api/sentry` (`worker/sentry.ts`). On a preview, `/?sentry-test=client` throws a test error (`docs/decisions/0011-sentry-setup.md`).
 - `docs/business.md`: what the site is for. `docs/decisions/`: decision records; read them before changing hosting, the domain, publishing or error tracking, and add a new record to change one. `docs/open-items.md`: what's waiting on JJ.
 
 ## rules

@@ -19,12 +19,20 @@ import { ToastHost } from './components/Toast';
 import { pendingMbids } from './engine/ingest';
 // First-party page views, engaged time and web vitals to /api/event.
 import './telemetry';
+// Browser errors to Sentry, through /api/sentry (production and previews only).
+import { initMonitoring, reactErrorHandler } from './monitoring';
+
+initMonitoring();
 
 // The ingest queue lives in localStorage; this is how it gets to the crawler:
 //   copy(segueQueue().join('\n'))   then   pbpaste | python3 scripts/ingest_mbids.py
 (window as unknown as { segueQueue: () => string[] }).segueQueue = pendingMbids;
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById('root')!, {
+  onUncaughtError: reactErrorHandler(),
+  onCaughtError: reactErrorHandler(),
+  onRecoverableError: reactErrorHandler(),
+}).render(
   <StrictMode>
     <ToastHost>
       <App />
