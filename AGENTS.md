@@ -39,6 +39,7 @@ Node 24, as CI uses. Run these before opening a PR. CI (`.github/workflows/ci.ym
 - `public/`: brand assets; the rules are in `BRAND.md`.
 - `wrangler.jsonc` and `worker/`: the Cloudflare Worker `album-guide-site` that serves the site.
 - `src/monitoring.ts`: Sentry in the browser; nothing else imports it. Events go through `/api/sentry` (`worker/sentry.ts`). On a preview, `/?sentry-test=client` throws a test error (`docs/decisions/0011-sentry-setup.md`).
+- `third-parties.json`: every host the page may contact. It drives the content security policy (`worker/security-headers.ts`, copied into `public/_headers`; `npm run test:worker` fails if they differ) and the e2e allow-list (`e2e/network.ts`). A new host means a new entry here (`docs/decisions/0012-security-headers.md`).
 - `docs/business.md`: what the site is for. `docs/decisions/`: decision records; read them before changing hosting, the domain, publishing or error tracking, and add a new record to change one. `docs/open-items.md`: what's waiting on JJ.
 
 ## rules
@@ -54,8 +55,6 @@ Node 24, as CI uses. Run these before opening a PR. CI (`.github/workflows/ci.ym
 
 Workers Builds builds every push with `npm run build:production` (it sets `VITE_API_BASE` to the Fly API). `main` runs `npx wrangler deploy` to production; every other branch runs `npx wrangler versions upload` to a preview URL, `https://<branch>-album-guide-site.jj-23b.workers.dev`. Merging a PR deploys it, so these rules apply to merging.
 
-- Merge without asking for copy, styling, layout, brand assets, docs and recommender tuning, with every check green and the change checked on the branch preview at mobile and desktop widths.
-- Bug fixes and monitoring or tooling changes may be merged without asking, once tested on the branch preview with every check green.
-- Ask JJ before merging anything touching `wrangler.jsonc` or the Worker, the domain or DNS, the API contract with `album-guide-api`, secrets, or anything where a check failed or was skipped, unless an issue JJ labelled `ready-to-build` asks for it (next rule; `~/dev/AGENTS.md`).
-- **Except when the PR does what an issue JJ labelled `ready-to-build` asks.** That label is JJ's approval, so merge once every check is green and it's tested. Still label it `needs-review` and wait when it goes beyond the issue, a check failed or was skipped, or it needs a step only JJ can do (a secret, a Fly deploy).
+- **Agents merge their own PRs** (JJ, 2026-11-09: "i think you're leaving too many decisions for me, reevaluate and lower the bar"). Merge once the required checks (`check`, `e2e`) and the Workers Builds preview pass and the change was checked on the branch preview at mobile and desktop widths. This covers the Worker, `wrangler.jsonc`, the domain and DNS and the API contract too. Record every decision you made in the PR body (`docs/decisions/0014-what-waits-for-jj.md`).
+- **Only these wait for JJ**, labelled `needs-review` and listed in `docs/open-items.md`: anything that needs a secret or 1Password; anything that spends money; a Fly deploy or any change to the Fly app (JJ's; see rules above); destructive changes to production data; and any action a permission check refused, which is never worked around. A failing check is fixed, never merged past.
 - In the report, say whether it was merged (and so deployed) or is waiting for approval.

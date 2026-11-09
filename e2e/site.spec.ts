@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { SECURITY_HEADERS } from '../worker/security-headers';
 import { guard, steady } from './network';
 import { ready, themes, views, widths } from './routes';
 
@@ -11,6 +12,10 @@ for (const view of views) {
       const response = await page.goto(view.path, { waitUntil: 'networkidle' });
       const status = view.status ?? 200;
       expect(response?.status()).toBe(status);
+      // The CSP and the rest are enforced here too, so a blocked host fails as a console error.
+      for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+        expect(response?.headers()[name.toLowerCase()], name).toBe(value);
+      }
       await (view.ready ?? ready)(page);
       await view.open?.(page);
       await page.waitForLoadState('networkidle');

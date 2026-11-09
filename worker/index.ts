@@ -3,6 +3,7 @@
 // 301 to album.guide, /api/* goes to `routes` below (anything else under /api/*
 // is a JSON 404), and every other path is served from dist/ by ASSETS, which
 // also answers unknown paths with 404.html.
+import { withSecurityHeaders } from './security-headers';
 import { SENTRY_TUNNEL_PATH, sentryTunnel } from './sentry';
 import { dataPoint, EVENT_PATH, MAX_BODY_BYTES, parseEvent, shouldDrop, visitorHash } from './telemetry';
 
@@ -61,19 +62,26 @@ const routes: Route[] = [
   { method: 'POST', path: SENTRY_TUNNEL_PATH, handle: sentryTunnel },
 ];
 
+// Every response, the redirect and the API's included, gets the security
+// headers (worker/security-headers.ts); public/_headers sets the same ones on
+// static files.
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-    if (url.hostname === 'www.album.guide') {
-      url.protocol = 'https:';
-      url.hostname = 'album.guide';
-      return Response.redirect(url.toString(), 301);
-    }
-    const { pathname } = url;
-    if (pathname !== '/api' && !pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
-    const route = routes.find((r) => r.method === request.method && r.path === pathname);
-    if (route) return route.handle(request, env);
-    console.log(JSON.stringify({ message: 'api not found', method: request.method, pathname }));
-    return Response.json({ error: 'not found' }, { status: 404 });
+    return withSecurityHeaders(await handle(request, env));
   },
 } satisfies ExportedHandler<Env>;
+
+async function handle(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  if (url.hostname === 'www.album.guide') {
+    url.protocol = 'https:';
+    url.hostname = 'album.guide';
+    return Response.redirect(url.toString(), 301);
+  }
+  const { pathname } = url;
+  if (pathname !== '/api' && !pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
+  const route = routes.find((r) => r.method === request.method && r.path === pathname);
+  if (route) return route.handle(request, env);
+  console.log(JSON.stringify({ message: 'api not found', method: request.method, pathname }));
+  return Response.json({ error: 'not found' }, { status: 404 });
+}

@@ -27,6 +27,8 @@ and builds every push with `npm run build:production`, which sets
 
 DNS for `album.guide` is on Cloudflare; the registration stays at Gandi
 (`docs/decisions/0003-domain.md`). `www.album.guide` redirects to the apex.
+The registration is paid through 2028-09-26 with auto-renew off. Renewing
+spends money, so it's JJ's decision nearer the date (`docs/open-items.md`).
 
 **Rolling back:** `npx wrangler rollback --name album-guide-site` restores the
 previous version; or revert the PR and merge the revert.

@@ -1,0 +1,17 @@
+# Response headers for static files. The Worker runs first for every request
+# and sets the same headers on everything it returns (worker/security-headers.ts);
+# these keep static files covered if it ever stops running first. Don't edit the
+# policy here: add hosts to third-parties.json, then copy the line that
+# worker/tests/security-headers.test.ts prints. See
+# docs/decisions/0012-security-headers.md.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://coverartarchive.org https://archive.org https://*.archive.org; font-src 'self'; connect-src 'self' https://album-guide-api.fly.dev https://coverartarchive.org https://archive.org https://*.archive.org https://musicbrainz.org https://api.listenbrainz.org; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Cross-Origin-Opener-Policy: same-origin
+
+# Vite's build output has content hashes in its file names.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
