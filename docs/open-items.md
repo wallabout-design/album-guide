@@ -24,6 +24,13 @@ What's waiting on JJ, as of 2026-11-08. Only things JJ has to do: accounts, secr
      ```
      Cloudflare dashboard → Workers & Pages → `album-guide-site` → Settings → Builds → **Variables and secrets** → add `SENTRY_AUTH_TOKEN`, type **Secret**, paste. Then `pbcopy < /dev/null`.
 
+## permissions
+
+- [ ] **Sentry limits and filters for `album-guide`** (`docs/decisions/0011-sentry-setup.md`). An agent's attempt to set the key's rate limit was refused by the permission check, so these are the same settings rr has, done by hand at https://wallabout-design-llc.sentry.io/settings/projects/album-guide/:
+  1. **Client Keys (DSN)** → the key → **Rate limits**: 150 events per day.
+  2. **Inbound Filters**: turn on browser extensions, localhost, web crawlers and legacy browsers.
+  3. **Security & Privacy**: turn on **Prevent storing of IP addresses** and the data scrubber.
+
 ## approvals
 
 - [ ] **Portal production migration.** The `wallabout-design/site` PR that registers album-guide in the portal is labelled `needs-review`: PR link to come. Merge it, then run the production migration from `portal/` (`npm run migrate`).
