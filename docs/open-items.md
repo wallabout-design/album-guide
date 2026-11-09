@@ -28,6 +28,7 @@ What's waiting on JJ, as of 2026-11-09, most urgent first. Only things an agent 
   1. **Client Keys (DSN)** → the key → **Rate limits**: 150 events per day.
   2. **Inbound Filters**: turn on browser extensions, localhost, web crawlers and legacy browsers.
   3. **Security & Privacy**: turn on **Prevent storing of IP addresses** and the data scrubber.
+- [ ] **Turn off Cloudflare Web Analytics injection on album.guide.** Cloudflare adds `static.cloudflareinsights.com/beacon.min.js` (token `907e7286…`) to every page. The CSP blocks it, so every page load logs one CSP console error, and the production checks (`docs/decisions/0013-production-checks.md`) carry a named allowance for it until it's gone. The zone's `rum` setting already reads `off` and the account lists no Web Analytics site for album.guide; an agent's attempt to create the site and disable it, as rr and wallabout.design have it, was refused by the permission check. By hand: Cloudflare dashboard → album.guide → **Analytics & Logs → Web Analytics** → disable it (or **Manage site** → automatic setup **Disable**). Then ask a session to remove `RUM_BEACON` from `e2e/production.spec.ts`.
 
 ## later
 
