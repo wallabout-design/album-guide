@@ -36,20 +36,18 @@ blue lacks contrast against ink.
 
 ## Hosting
 
-Production is **https://album.guide** (until the custom domain is live,
-https://album-guide-site.jj-23b.workers.dev). Three pieces:
+Production is **https://album.guide**. Three pieces:
 
 **The site** is static, served by the Cloudflare Worker `album-guide-site` as
 Workers static assets (`wrangler.jsonc`). Workers Builds builds every push with
 `npm run build:production` (which sets the production API address); merging to
 `main` runs `npx wrangler deploy`, and every other branch runs
 `npx wrangler versions upload` for a preview URL,
-`https://<branch>-album-guide-site.jj-23b.workers.dev`. The Worker code runs
-only for `/api/*`; everything else is the Vite build. `main` is protected, so
-every change, catalog snapshots included, lands through a pull request. GitHub
-Pages (`jj-noonan.github.io/album-guide/`) is being retired: its workflow is
-removed once the Worker serves album.guide. See
-`docs/decisions/0002-hosting.md`.
+`https://<branch>-album-guide-site.jj-23b.workers.dev`. The Worker code
+redirects `www` and answers `/api/*`; everything else is the Vite build. `main`
+is protected, so every change, catalog snapshots included, lands through a pull
+request. GitHub Pages (`jj-noonan.github.io/album-guide/`) was retired on
+2026-11-09. See `docs/decisions/0002-hosting.md`.
 
 **The domain** `album.guide` is registered at Gandi, with its DNS on
 Cloudflare (`docs/decisions/0003-domain.md`). `www.album.guide` redirects to

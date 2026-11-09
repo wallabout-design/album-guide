@@ -20,7 +20,11 @@ function post(body: unknown, headers: Record<string, string> = {}) {
 
 function fakeEnv(salt: { TELEMETRY_SALT?: string } = { TELEMETRY_SALT: 'salt' }) {
   const points: ReturnType<typeof dataPoint>[] = [];
-  const env: Env = { EVENTS: { writeDataPoint: (p) => void points.push(p) }, ...salt };
+  const env: Env = {
+    ASSETS: { fetch: async () => new Response('asset') } as unknown as Fetcher,
+    EVENTS: { writeDataPoint: (p) => void points.push(p) },
+    ...salt,
+  };
   return { points, env };
 }
 
@@ -66,8 +70,8 @@ test('without TELEMETRY_SALT, nothing is written and the answer is still 204', a
     assert.equal((await worker.fetch(post(pageview), env)).status, 204);
     assert.equal(points.length, 0);
   }
-  // No bindings at all (local `wrangler dev` without the dataset).
-  assert.equal((await worker.fetch(post(pageview), {})).status, 204);
+  // No telemetry bindings at all (local `wrangler dev` without the dataset).
+  assert.equal((await worker.fetch(post(pageview), { ASSETS: fakeEnv().env.ASSETS })).status, 204);
 });
 
 test('cross-site, oversized and malformed requests are refused', async () => {
