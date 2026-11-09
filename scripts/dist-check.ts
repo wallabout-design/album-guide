@@ -38,10 +38,22 @@ for (const [what, needle] of [
   if (!bundle.includes(needle)) problems.push(`bundle is missing ${what} (${needle})`);
 }
 
-// Relative asset paths, so the same build serves a subpath or a custom domain.
-for (const m of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
-  const url = m[1];
-  if (url.startsWith('/')) problems.push(`absolute asset path "${url}" breaks subpath hosting`);
+// Root-relative asset paths. The site is served at the domain root, and the 404
+// page is served at any depth, where a relative path resolves under the missing
+// one and the page renders blank (docs/decisions/0010-real-404-and-root-base.md).
+for (const page of ['index.html', '404.html']) {
+  const text = readFileSync(new URL(page, dist), 'utf8');
+  for (const m of text.matchAll(/(?:src|href)="([^"]+)"/g)) {
+    const url = m[1];
+    if (/^(https?:|mailto:|data:|#)/.test(url)) continue;
+    if (!url.startsWith('/')) problems.push(`${page}: relative path "${url}" breaks below the root`);
+    else if (!existsSync(new URL(url.slice(1).split(/[?#]/)[0] || 'index.html', dist))) {
+      problems.push(`${page}: "${url}" is not in the build`);
+    }
+  }
+  if (!/<meta name="build" content="(?:[0-9a-f]{7}|dev)"/.test(text)) {
+    problems.push(`${page}: no <meta name="build"> with the commit`);
+  }
 }
 
 /*
@@ -49,7 +61,7 @@ for (const m of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
  * render — the failure mode that matters, and the one a grep cannot see.
  */
 const dom = new JSDOM(html, {
-  url: 'https://jj-noonan.github.io/album-guide/',
+  url: 'https://album.guide/',
   pretendToBeVisual: true,
   runScripts: 'outside-only',
 });
@@ -108,7 +120,7 @@ for (const [what, sel] of [
     .filter(Boolean);
   const missing = imgs.filter((src) => {
     if (/^(https?:|data:)/.test(src)) return false;
-    return !existsSync(new URL(src.replace(/^\.\//, ''), dist));
+    return !existsSync(new URL(src.replace(/^\.?\//, ''), dist));
   });
   console.log(`images:      ${imgs.length} referenced, ${missing.length} missing`);
   missing.forEach((m) => problems.push(`image not in build: ${m}`));

@@ -27,7 +27,7 @@ export function About({ onClose, onRestart }: Props) {
         <button className="about__close" onClick={onClose} aria-label="Close">×</button>
 
         <header className="about__head">
-          <img src="./svg/logo-primary-reversed.svg" alt="album.guide" width={116} />
+          <img src="/svg/logo-primary-reversed.svg" alt="album.guide" width={116} />
           <p className="tagline">A route through the albums you haven&rsquo;t <em>found</em> yet</p>
         </header>
 
