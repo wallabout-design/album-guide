@@ -92,7 +92,7 @@ jobs:
         with:
           script: |
             const marker = '<!-- screenshots -->';
-            const body = `${marker}\nScreenshots of every view (home, about, search, debug) at 360, 768, 1024 and 1440px, light and dark, in Chromium and WebKit: [download the \`screenshots\` artifact](${process.env.ARTIFACT_URL}) (commit ${context.sha.slice(0, 7)}).`;
+            const body = `${marker}\nScreenshots of every view (e2e/routes.ts) at 360, 768, 1024 and 1440px, light and dark, in Chromium and WebKit: [download the \`screenshots\` artifact](${process.env.ARTIFACT_URL}) (commit ${context.sha.slice(0, 7)}).`;
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
             const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
