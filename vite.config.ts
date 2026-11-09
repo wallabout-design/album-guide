@@ -1,9 +1,11 @@
 import { execSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
 import react from '@vitejs/plugin-react'
 import { defineConfig, type Connect, type Plugin } from 'vite'
 
-// The commit this build came from (7 characters), for telemetry (src/telemetry.ts).
+// The commit this build came from (7 characters), for telemetry (src/telemetry.ts)
+// and the pages' <meta name="build"> (the feedback link puts it in every note).
 // Workers Builds sets WORKERS_CI_COMMIT_SHA; locally, ask git. "dev" when
 // neither is available, which the Worker stores as an empty build.
 function buildSha(): string {
@@ -47,9 +49,11 @@ function telemetryStub(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Relative base: the same build works at jj-noonan.github.io/album-guide/ and at
-  // a custom domain later, with no rebuild and no path juggling.
-  base: './',
+  // Root-relative: the site is served at the domain root (album.guide, and
+  // *.workers.dev for previews). The 404 page is served at any depth, where
+  // relative asset URLs would resolve under the missing path and break
+  // (docs/decisions/0010-real-404-and-root-base.md).
+  base: '/',
   plugins: [
     react(),
     telemetryStub(),
@@ -62,10 +66,19 @@ export default defineConfig({
       sourcemaps: { disable: uploadSourceMaps ? false : 'disable-upload' },
     }),
   ],
-  build: { sourcemap: 'hidden' },
   define: {
-    // Also Sentry's release (src/monitoring.ts).
+    // Also fills %VITE_BUILD_SHA% in index.html and 404.html (<meta name="build">),
+    // and is Sentry's release (src/monitoring.ts).
     'import.meta.env.VITE_BUILD_SHA': JSON.stringify(buildSha()),
     'import.meta.env.VITE_SENTRY_ENVIRONMENT': JSON.stringify(sentryEnvironment()),
+  },
+  build: {
+    sourcemap: 'hidden',
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        notFound: fileURLToPath(new URL('./404.html', import.meta.url)),
+      },
+    },
   },
 })
