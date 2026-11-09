@@ -42,7 +42,7 @@
 
 .debug section { padding: 12px 14px; border-bottom: 1px solid var(--hairline); }
 
-.debug h4 {
+.debug h2 {
   margin: 0 0 8px;
   font-size: 9.5px;
   letter-spacing: 0.14em;

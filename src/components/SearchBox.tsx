@@ -288,7 +288,7 @@ export function SearchBox({ pool, onPick, onIngest, onOpenChange }: Props) {
             </div>
 
             {query.trim().length >= 2 && (
-              <div className="search__results" role="listbox">
+              <div className="search__results" role="listbox" aria-label="Results">
                 {results.length === 0 && !probing && remote.length === 0 ? (
                   <p className="search__empty">
                     Nothing here, and nothing in MusicBrainz either.

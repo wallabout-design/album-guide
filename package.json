@@ -29,7 +29,11 @@
     "backfill": ".venv/bin/python -u scripts/backfill_popularity.py",
     "eval": "vite-node scripts/eval-recs.ts --",
     "eval:fetch": ".venv/bin/python scripts/fetch_similar.py",
-    "reach": "vite-node scripts/reach-check.ts"
+    "reach": "vite-node scripts/reach-check.ts",
+    "typecheck": "tsc -b",
+    "lint:html": "html-validate \"dist/**/*.html\"",
+    "test:e2e": "playwright test",
+    "screenshots": "SCREENSHOTS=1 playwright test e2e/screenshots.spec.ts"
   },
   "dependencies": {
     "@fontsource/jost": "^5.3.0",
@@ -39,10 +43,13 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.65.0",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
+    "html-validate": "^11.21.0",
     "jsdom": "^30.0.1",
     "oxlint": "^1.79.0",
     "tsx": "^4.23.13",

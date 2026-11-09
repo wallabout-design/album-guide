@@ -581,7 +581,7 @@ export default function App() {
         </div>
       </header>
 
-      <div className="flow">
+      <main className="flow">
         <Flow cards={cards} />
 
 
@@ -635,7 +635,7 @@ export default function App() {
           <li><kbd>/</kbd> search</li>
           <li><kbd>g</kbd>/<kbd>m</kbd>/<kbd>x</kbd> rate</li>
         </ul>
-      </div>
+      </main>
 
       {showAbout && (
         <About onClose={() => setShowAbout(false)} onRestart={restart} />

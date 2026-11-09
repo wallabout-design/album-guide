@@ -16,3 +16,6 @@ data/*.sqlite-shm
 # Built by api/make-api-db.py from catalog.sqlite; 125 MB, reproducible.
 data/catalog-api.sqlite
 data/parity-ts.json
+screenshots/
+playwright-report/
+test-results/

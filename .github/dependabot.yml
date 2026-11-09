@@ -1,0 +1,28 @@
+# Weekly dependency updates, grouped so each ecosystem opens at most one
+# minor-and-patch PR a week. CI (`check` and `e2e`) must pass before any merge.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      npm:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    # Majors come as separate PRs, since they can need migrations.
+    open-pull-requests-limit: 5
+    ignore:
+      # Types track the Node version CI runs (24), not the latest. Raise both together.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]

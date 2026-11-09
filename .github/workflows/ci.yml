@@ -1,0 +1,101 @@
+name: CI
+
+# Checks every pull request and every push to main. `check` and `e2e` are the
+# required checks on main.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Type check, build, HTML validation, lint, and the repo's own offline checks.
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      # Built as production builds it, against the production API.
+      - run: npm run build
+        env:
+          VITE_API_BASE: https://album-guide-api.fly.dev
+      - run: npm run lint:html
+      - run: npm run lint
+      - run: npm run check
+      - run: npm run click-check
+      - run: npm run feedback-check
+      - run: npm run dist-check
+      - run: npm run eval
+
+  # Every view in Chromium and WebKit against the production build, with the
+  # API and cover art mocked (e2e/network.ts); see playwright.config.ts.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  # Every view at 360, 768, 1024 and 1440px, light and dark, Chromium and
+  # WebKit, for reviewing a change visually. Not a required check; it comments
+  # on the PR with a link to the artifact.
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run screenshots
+      - uses: actions/upload-artifact@v7
+        id: upload
+        with:
+          name: screenshots
+          path: screenshots/
+          retention-days: 14
+      # Only on PRs, and not Dependabot's: its token is read-only.
+      - if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+        uses: actions/github-script@v9
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        with:
+          script: |
+            const marker = '<!-- screenshots -->';
+            const body = `${marker}\nScreenshots of every view (home, about, search, debug) at 360, 768, 1024 and 1440px, light and dark, in Chromium and WebKit: [download the \`screenshots\` artifact](${process.env.ARTIFACT_URL}) (commit ${context.sha.slice(0, 7)}).`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const existing = comments.find((c) => c.body?.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
