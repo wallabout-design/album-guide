@@ -1,0 +1,33 @@
+# open items
+
+What's waiting on JJ, as of 2026-11-08. Only things JJ has to do: accounts, secrets, approvals, decisions. Tick or remove an item when it's done.
+
+## secrets
+
+- [ ] **`TELEMETRY_SALT` for the Worker.** Until it's set, `/api/*` telemetry answers `204` and stores nothing, and the `telemetry` flag in `sites.json` stays `false`. Run:
+  ```sh
+  eval $(op signin)
+  op item create --vault client-noonan --category=password --title="album-guide TELEMETRY_SALT" --generate-password='letters,digits,48'
+  op item get "album-guide TELEMETRY_SALT" --vault client-noonan --fields password --reveal --format json | jq -r .value | tr -d '\n' | npx wrangler secret put TELEMETRY_SALT --name album-guide-site
+  ```
+  Then ask a session to set `telemetry` to `true` for album-guide in `sites.json` (`wallabout-design/standards`).
+- [ ] **Sentry auth token for source-map upload** (`docs/decisions/0004-error-tracking.md`). Without it, errors arrive in Sentry with minified stack traces.
+  1. Create an organization token that can only upload: https://wallabout-design-llc.sentry.io/settings/auth-tokens/ → **Create New Token**, name it `album-guide source maps`. Copy it.
+  2. Save it to 1Password without showing it, then clear the clipboard:
+     ```sh
+     eval $(op signin)   # skip if `op whoami` already works
+     read -rs KEY && op item create --vault client-noonan --category="API Credential" --title="album-guide SENTRY_AUTH_TOKEN" "credential=$KEY"; unset KEY; pbcopy < /dev/null
+     ```
+  3. Add it to the Workers Builds build as a secret: copy it to the clipboard, paste it in the dashboard, then clear the clipboard:
+     ```sh
+     op item get "album-guide SENTRY_AUTH_TOKEN" --vault client-noonan --fields credential --reveal --format json | jq -r .value | tr -d '\n' | pbcopy
+     ```
+     Cloudflare dashboard → Workers & Pages → `album-guide-site` → Settings → Builds → **Variables and secrets** → add `SENTRY_AUTH_TOKEN`, type **Secret**, paste. Then `pbcopy < /dev/null`.
+
+## approvals
+
+- [ ] **Portal production migration.** The `wallabout-design/site` PR that registers album-guide in the portal is labelled `needs-review`: PR link to come. Merge it, then run the production migration from `portal/` (`npm run migrate`).
+
+## to check
+
+- [ ] **album.guide registration renewal at Gandi.** Registration stays at Gandi (`docs/decisions/0003-domain.md`). Check the expiry date and that auto-renew is on: https://admin.gandi.net/domain/ → album.guide

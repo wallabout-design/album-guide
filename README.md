@@ -36,18 +36,30 @@ blue lacks contrast against ink.
 
 ## Hosting
 
-Two pieces.
+Production is **https://album.guide** (until the custom domain is live,
+https://album-guide-site.jj-23b.workers.dev). Three pieces:
 
-**The site** is static, on GitHub Pages. `vite.config.ts` uses `base: './'`, so
-the same build serves from `jj-noonan.github.io/album-guide/` and from a custom
-domain with no rebuild. Pushing to `main` triggers
-`.github/workflows/deploy.yml`.
+**The site** is static, served by the Cloudflare Worker `album-guide-site` as
+Workers static assets (`wrangler.jsonc`). Workers Builds builds every push with
+`npm run build:production` (which sets the production API address); merging to
+`main` runs `npx wrangler deploy`, and every other branch runs
+`npx wrangler versions upload` for a preview URL,
+`https://<branch>-album-guide-site.jj-23b.workers.dev`. The Worker code runs
+only for `/api/*`; everything else is the Vite build. `main` is protected, so
+every change, catalog snapshots included, lands through a pull request. GitHub
+Pages (`jj-noonan.github.io/album-guide/`) is being retired: its workflow is
+removed once the Worker serves album.guide. See
+`docs/decisions/0002-hosting.md`.
+
+**The domain** `album.guide` is registered at Gandi, with its DNS on
+Cloudflare (`docs/decisions/0003-domain.md`). `www.album.guide` redirects to
+the apex.
 
 **The catalog API** is a read-only Python server on Fly.io at
 `album-guide-api.fly.dev`, holding a copy of the crawl database with the
-crawler's bookkeeping dropped. See `DEPLOY.md`. Machines sleep when idle, so
-the first request after a quiet spell takes a few seconds and the rest take
-about one.
+crawler's bookkeeping dropped. It's deployed by hand, by JJ; see `DEPLOY.md`.
+Machines sleep when idle, so the first request after a quiet spell takes a few
+seconds and the rest take about one.
 
 The split exists because the browser cannot hold the catalog. Bundling it costs
 ~165 gzipped bytes an album, so the 12,000 that ship are 1.9 MB and all 100,931
@@ -55,18 +67,21 @@ would be about 16 MB. The bundle is still there and still works on its own —
 if the API is asleep, slow or gone, the client scores the albums it has and the
 site behaves as it did before there was an API. Nothing about it is required.
 
-To move to a custom domain (`album.guide` once registered): add a
-`public/CNAME` file containing that hostname, then point a DNS `CNAME` record
-at `jj-noonan.github.io`. Don't add the file before the DNS record exists —
-Pages serves 404s at the old URL in the gap. The `og:image` tags in
-`index.html` also point at the Pages URL and want updating at the same time.
+**Publishing a catalog snapshot.** `npm run publish` (`scripts/publish.sh`)
+re-exports `src/data/catalog.json` and lands it through a PR from a temporary
+worktree, then redeploys the API (`docs/decisions/0006-publish-through-a-pr.md`).
+`bash scripts/publish.sh --dry-run` shows what it would do without pushing.
 
 ## Running it
 
 ```bash
-npm install
+git clone https://github.com/wallabout-design/album-guide.git
+cd album-guide
+npm ci
 npm run dev          # http://localhost:5173
 ```
+
+Working on the repo with Claude or another agent? Read `AGENTS.md` first.
 
 That runs against the bundled catalog alone. To develop against the full one:
 
@@ -80,7 +95,7 @@ Node only — no virtualenv needed for the app itself. Python is used solely by
 the offline crawler, which has its own venv:
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install requests
+python3 -m venv .venv && .venv/bin/python -m pip install requests
 npm run crawl:deep   # resumable; safe to interrupt with ctrl-c
 ```
 
@@ -112,6 +127,8 @@ tail -f data/crawl.log
 | `npm run reach` | how much of the catalog the engine can actually offer |
 | `npm run ingest-check` | exercise search-driven ingest against the live APIs |
 | `npm run check` | server-render the app and assert its structure |
+| `npm run lint` | oxlint |
+| `npm run publish` | publish a catalog snapshot through a PR, then redeploy the API (JJ only) |
 
 `npm run walk -- --dial 0.9 --steps 10` is the quickest way to judge whether a
 change to the lexicon or the scorer actually improved anything.
