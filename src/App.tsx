@@ -526,7 +526,7 @@ export default function App() {
     // stuck, so it must never be a dead end.
     return (
       <div className="loading">
-        <img className="loading__logo" src="./svg/logo-primary-reversed.svg" alt="album.guide" width={190} />
+        <img className="loading__logo" src="/svg/logo-primary-reversed.svg" alt="album.guide" width={190} />
         <p className="tagline">
           A route through the albums you haven&rsquo;t <em>found</em> yet
         </p>
@@ -556,7 +556,7 @@ export default function App() {
             onClick={() => setShowAbout(true)}
             title="What this is, and how to travel it"
           >
-            <img className="brand__mark" src="./svg/icon-lg-reversed.svg" alt="album.guide" width={64} height={64} />
+            <img className="brand__mark" src="/svg/icon-lg-reversed.svg" alt="album.guide" width={64} height={64} />
             <span className="brand__word">
               <span>album</span>
               <span>.guide</span>

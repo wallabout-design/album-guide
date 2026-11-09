@@ -1,0 +1,9 @@
+/*
+ * The 404 page's styles (404.html). It has no script: it reuses the app's
+ * fonts and the start screen's look (.loading, .tagline, .play in index.css),
+ * so a missing page still looks like album.guide.
+ */
+@import '@fontsource/jost/400.css';
+@import '@fontsource/jost/500.css';
+@import './brand-tokens.css';
+@import './index.css';

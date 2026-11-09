@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { FeedbackLink } from '@wallabout-design/feedback/react';
 // Self-hosted so the app has no CDN dependency and works offline.
 //
 // Jost, and not casually. Its `a` is single-storey — a circle with a stem —
@@ -14,6 +15,7 @@ import '@fontsource/jost/700.css';
 // Tokens first: the component styles below resolve --ag-* from here.
 import './brand-tokens.css';
 import './index.css';
+import './components/FeedbackLink.css';
 import App from './App.tsx';
 import { ToastHost } from './components/Toast';
 import { pendingMbids } from './engine/ingest';
@@ -26,6 +28,8 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ToastHost>
       <App />
+      {/* Hidden "send feedback" link for reviewers (?feedback turns it on). */}
+      <FeedbackLink siteId="album-guide" className="feedback-link" />
     </ToastHost>
   </StrictMode>,
 );

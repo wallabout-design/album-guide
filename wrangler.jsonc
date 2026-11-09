@@ -10,9 +10,9 @@
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./dist",
-    // The app routes in the browser, so unknown paths get index.html for now.
-    // A real 404 page comes with the search basics.
-    "not_found_handling": "single-page-application",
+    // The app has one page, /. Any other path gets dist/404.html with HTTP 404
+    // (docs/decisions/0010-real-404-and-root-base.md).
+    "not_found_handling": "404-page",
     "run_worker_first": ["/api/*"],
   },
   // No routes yet: the album.guide custom domain is added once its zone is on
