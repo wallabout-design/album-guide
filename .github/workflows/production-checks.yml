@@ -9,9 +9,6 @@ on:
   schedule:
     - cron: "37 */6 * * *"
   workflow_dispatch:
-  # TEMPORARY: proves the workflow on this branch before merge; removed before review.
-  push:
-    branches: [ci/production-checks]
 
 permissions:
   contents: read
