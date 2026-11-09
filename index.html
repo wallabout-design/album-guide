@@ -36,11 +36,24 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "album.guide",
-        "url": "https://album.guide/",
-        "description": "Music discovery that travels past the obvious. Pick a cover, take a turn, and see where the road goes.",
-        "inLanguage": "en"
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://album.guide/#organization",
+            "name": "album.guide",
+            "url": "https://album.guide/",
+            "logo": "https://album.guide/icons/icon-512.png"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://album.guide/#website",
+            "name": "album.guide",
+            "url": "https://album.guide/",
+            "description": "Music discovery that travels past the obvious. Pick a cover, take a turn, and see where the road goes.",
+            "inLanguage": "en",
+            "publisher": { "@id": "https://album.guide/#organization" }
+          }
+        ]
       }
     </script>
   </head>

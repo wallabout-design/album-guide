@@ -11,6 +11,7 @@ The Worker served every unknown path with `index.html` (`not_found_handling: "si
 - `wrangler.jsonc` uses `not_found_handling: "404-page"`: any path with no file gets `dist/404.html` with HTTP 404. `/api/*` still goes to the Worker first.
 - `vite.config.ts` uses `base: '/'`, and `index.html`, `404.html` and the app's images use root-relative URLs (`/assets/…`, `/svg/…`). The site is served at the domain root (album.guide, and `*.workers.dev` for previews), so a subpath build is no longer needed. `npm run dist-check` now fails on a relative path in either page, or one that isn't in the build.
 - `404.html` is a second Vite entry. It has no script: it reuses the app's fonts and the start screen's look (`.loading` in `src/index.css`), with a link back to `/`, and `noindex`.
+- Structured data (`index.html`) is an `Organization` named album.guide, with `https://album.guide/icons/icon-512.png` as its logo (a PNG, so it renders without the web font), and a `WebSite` it publishes. No `SearchAction`: search happens inside the app and has no URL.
 - The 404 page has no feedback link. Its script would share a chunk with the app's bundle, which `dist-check` evaluates as one classic script. A reviewer on a broken link can still email `feedback@wallabout.design`.
 
 ## why
