@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin · album.guide</title>
+    <meta name="description" content="Where the people who run album.guide manage its lists.">
+    <meta name="robots" content="noindex">
+    <!-- The commit this page was built from, for feedback notes. -->
+    <meta name="build" content="%VITE_BUILD_SHA%">
+
+    <link rel="icon" href="/favicon/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <meta name="theme-color" content="#185FA5">
+  </head>
+  <body>
+    <!-- Served only to signed-in staff (worker/admin.ts). It holds no data: every list comes from /admin/api. -->
+    <div id="admin"></div>
+    <script type="module" src="/src/admin/main.tsx"></script>
+  </body>
+</html>

@@ -21,7 +21,7 @@ Node 24 (`.nvmrc`, which CI and Workers Builds read). Run these before opening a
 
 - `npx tsc -b`: type check
 - `npm run lint`: oxlint
-- `npm run build`: type check and build to `dist/` (bundled catalog only). `npm run build:production` adds the Fly API address, as Workers Builds does
+- `npm run build`: type check and build to `dist/` (bundled catalog only), the app first and then the small pages (`vite.pages.config.ts`). `npm run build:production` adds the Fly API address, as Workers Builds does
 - `npm run check`: server-render the app and assert its structure. Also `npm run click-check`, `npm run feedback-check`, `npm run dist-check` (after a build); none needs the network. `npm run api-wire-check` needs a local API, so CI skips it
 - `npm run test:worker`: the Worker's unit tests (`worker/tests/`)
 - `npm run test:lib`: unit tests of the plain-TypeScript logic under `src/lib/` (collections: validation, pagination, the service against a fake store and against real SQLite with the migration)
@@ -40,6 +40,7 @@ Node 24 (`.nvmrc`, which CI and Workers Builds read). Run these before opening a
 - `api/`: the read-only catalog API that runs on Fly as `album-guide-api`. `DEPLOY.md` covers it.
 - `public/`: brand assets; the rules are in `BRAND.md`.
 - `src/collections.ts`: the collections this site has (staff picks). `worker/collections.ts` serves `GET /api/collections/<name>`; `migrations/` is applied by `npm run ship:production` on deploy; `scripts/seed-preview.sql` fills the preview and e2e databases (`docs/decisions/0016-collections.md`).
+- `admin.html` and `src/admin/`: the admin page, generated from the collections' definitions. It is built by a second Vite build (`vite.pages.config.ts`) so it never shares a chunk with the app or its catalog. `e2e/admin.spec.ts` drives it in a browser; `e2e/admin.ts` has the sign-in and the per-test scratch collections.
 - `worker/admin.ts` and `worker/admin-auth.ts`: `/admin` and `/admin/api/*`, staff only. Every request is checked there before anything else happens (`docs/decisions/0017-admin.md`). On a preview or a local run the sign-in is the preview code in `wrangler.jsonc`.
 - `wrangler.jsonc` and `worker/`: the Cloudflare Worker `album-guide-site` that serves the site, and its preview twin `album-guide-site-preview` (`env.preview`).
 - `src/monitoring.ts`: Sentry in the browser; nothing else imports it. Events go through `/api/sentry` (`worker/sentry.ts`). On a preview, `/?sentry-test=client` throws a test error (`docs/decisions/0011-sentry-setup.md`).
