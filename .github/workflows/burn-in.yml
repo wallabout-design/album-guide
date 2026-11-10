@@ -47,8 +47,8 @@ jobs:
           [[ "$REPEAT_EACH" =~ ^[0-9]+$ && "$REPEAT_EACH" -ge 1 ]] || { echo "repeat_each must be a number"; exit 1; }
           echo "list=[$(seq -s, 1 "$N")]" >> "$GITHUB_OUTPUT"
 
-  # The offline checks and the Worker unit tests (as `check` in ci.yml, without
-  # the type check, lint and HTML validation, which cannot flake).
+  # The unit layer and the check of dist/ (as `check` in ci.yml, without the
+  # type check, lint and HTML validation, which cannot flake).
   check:
     needs: plan
     name: check ${{ matrix.run }}
@@ -66,12 +66,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build:production
-      - run: npm run check
-      - run: npm run click-check
-      - run: npm run feedback-check
       - run: npm run dist-check
-      - run: npm run eval
-      - run: npm run test:worker
+      - run: npm run test:unit
       - run: npm run test:lib
 
   # Playwright against the production build in workerd (as `e2e` in ci.yml).

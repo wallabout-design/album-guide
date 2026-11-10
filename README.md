@@ -125,7 +125,8 @@ tail -f data/crawl.log
 | `npm run eval:fetch` | refresh that ground truth from ListenBrainz Labs |
 | `npm run reach` | how much of the catalog the engine can actually offer |
 | `npm run ingest-check` | exercise search-driven ingest against the live APIs |
-| `npm run check` | server-render the app and assert its structure |
+| `npm run verify` | everything CI requires: static checks, build, unit and browser tests |
+| `npm run render-check` | server-render the app and assert its structure |
 | `npm run lint` | oxlint |
 | `npm run publish` | publish a catalog snapshot through a PR, then redeploy the API (JJ only) |
 

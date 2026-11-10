@@ -3,7 +3,7 @@
 // (the tunnel in worker/sentry.ts), so the page makes no third-party request.
 // The environment is baked in by vite.config.ts: "production" for main and
 // "preview" for other branches in Workers Builds, and empty everywhere else
-// (local dev, CI, `npm run check`), which keeps Sentry off.
+// (local dev, CI, `npm run render-check`), which keeps Sentry off.
 // See docs/decisions/0011-sentry-setup.md.
 import * as Sentry from '@sentry/react';
 import { SENTRY_DSN, SENTRY_TUNNEL_PATH } from './sentry-config';
