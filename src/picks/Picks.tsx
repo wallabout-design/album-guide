@@ -24,7 +24,7 @@ function Pick({ pick }: { pick: PublicRecord }) {
     <li className={data.featured === true ? 'pick pick--featured' : 'pick'}>
       <div className="pick__cover">
         {!noCover && (
-          <img src={coverOf(text(data.album))} alt="" width="250" height="250" loading="lazy" decoding="async" onError={() => setNoCover(true)} />
+          <img src={coverOf(text(data.album))} alt="" width="250" height="250" decoding="async" onError={() => setNoCover(true)} />
         )}
       </div>
       <div className="pick__words">
