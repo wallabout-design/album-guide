@@ -130,6 +130,24 @@ test.describe('signed in', () => {
     expect(await publicTitles(request, collection)).toEqual([1, 2, 3, 4, 5, 6, 7, 8].map((n) => `Thing ${n}`));
   });
 
+  test('a long search answers with its matches, not an error', async ({ request, baseURL }, testInfo) => {
+    const collection = scratch(testInfo);
+    const api = `/admin/api/collections/${collection}`;
+    await signIn(request, baseURL!);
+    const title = 'A long pasted title';
+    const note = 'And a note with %, _ and é in it, to run long';
+    expect((await request.post(api, { headers: writeHeaders(baseURL!), data: { data: { title, note } } })).status()).toBe(201);
+
+    // D1 refuses a LIKE pattern over 50 bytes; a search is up to 100 characters.
+    const search = async (q: string) => {
+      const response = await request.get(`${api}?q=${encodeURIComponent(q)}`);
+      expect(response.status(), `${q.length} characters`).toBe(200);
+      return ((await response.json()) as Body).items.map((i: Body) => i.data.title);
+    };
+    expect(await search(`${title} ${note}`.toUpperCase())).toEqual([title]);
+    expect(await search('a'.repeat(100))).toEqual([]);
+  });
+
   test('a write without the admin header or from another origin is refused', async ({ request, baseURL }, testInfo) => {
     const collection = scratch(testInfo);
     const api = `/admin/api/collections/${collection}`;

@@ -81,9 +81,6 @@ const SHOW: Record<ListQuery['show'], string> = {
   removed: 'deleted_at IS NOT NULL',
 };
 
-/** Escapes what LIKE treats as wildcards, for use with ESCAPE '\'. */
-const likeText = (text: string) => text.replace(/[\\%_]/g, '\\$&');
-
 export function createSqlStore(db: SqlDatabase): CollectionStore {
   const historyInsert = (entry: NewHistory, onlyIf: string, ...onlyIfValues: unknown[]) =>
     db
@@ -100,8 +97,10 @@ export function createSqlStore(db: SqlDatabase): CollectionStore {
       const where = ['collection = ?', SHOW[query.show]];
       const values: unknown[] = [query.collection];
       if (query.search) {
-        where.push("search LIKE ? ESCAPE '\\'");
-        values.push(`%${likeText(query.search)}%`);
+        // instr, not LIKE: D1 refuses a LIKE pattern over 50 bytes, and both
+        // sides are already lowercase, so plain containment is the match.
+        where.push('instr(search, ?) > 0');
+        values.push(query.search);
       }
       if (query.after) {
         where.push(`(${key}, id) ${ascending ? '>' : '<'} (?, ?)`);
