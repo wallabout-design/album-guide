@@ -17,6 +17,8 @@ A prospect's site lists people and classes that its staff add and remove regular
 - **Database ids are in `wrangler.jsonc`**, in a public repo. An id is not a credential: it is useless without an account token. rr does the same.
 - **End-to-end tests** get scratch collections (`test-*`) through a flag passed only to the local Worker (`npm run e2e:server`), so each test has its own records.
 
+- **The small pages are a second Vite build** (`vite.pages.config.ts`, after the app's, into the same `dist/`). One build with several entries would split React into a shared chunk; the app's bundle would stop being the single self-contained file that `scripts/dist-check.ts` runs, and a careless import could pull the 6.8 MB catalog into the admin. `dist-check` now fails if a small page loads more than 600 KB of script.
+
 ## why
 
 - The library is plain TypeScript behind a store interface, so it is unit-tested without a Worker, and the same folder can move to a shared package for the next site.
