@@ -33,6 +33,19 @@ env:
   REPEAT_EACH: ${{ inputs.repeat_each || '1' }}
 
 jobs:
+  # The installed Playwright version, which names the container image the
+  # browser jobs run in, so the two can never drift apart when Playwright is
+  # updated.
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: version
+        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+
   plan:
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -72,7 +85,7 @@ jobs:
 
   # Playwright against the production build in workerd (as `e2e` in ci.yml).
   e2e:
-    needs: plan
+    needs: [plan, playwright]
     name: e2e ${{ matrix.run }}
     strategy:
       fail-fast: false
@@ -80,6 +93,13 @@ jobs:
         run: ${{ fromJSON(needs.plan.outputs.runs) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Playwright's own image: the browsers and their system libraries are in it.
+    # Installing them on each run (`playwright install --with-deps`) downloads
+    # from Ubuntu's mirror, and when that stalled, jobs hung until they timed
+    # out (8 of 30 burn-in jobs on 2026-11-10). Tests must not need the network.
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.playwright.outputs.version }}-noble
+      options: --ipc=host
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -87,7 +107,6 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e -- --retries=0 --repeat-each="$REPEAT_EACH"
       - if: failure()
         uses: actions/upload-artifact@v7
@@ -100,7 +119,7 @@ jobs:
 
   # The screenshot matrix (as `screenshots` in ci.yml).
   screenshots:
-    needs: plan
+    needs: [plan, playwright]
     name: screenshots ${{ matrix.run }}
     strategy:
       fail-fast: false
@@ -108,6 +127,13 @@ jobs:
         run: ${{ fromJSON(needs.plan.outputs.runs) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Playwright's own image: the browsers and their system libraries are in it.
+    # Installing them on each run (`playwright install --with-deps`) downloads
+    # from Ubuntu's mirror, and when that stalled, jobs hung until they timed
+    # out (8 of 30 burn-in jobs on 2026-11-10). Tests must not need the network.
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.playwright.outputs.version }}-noble
+      options: --ipc=host
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -115,7 +141,6 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium webkit
       - run: npm run screenshots -- --retries=0
       - if: failure()
         uses: actions/upload-artifact@v7
@@ -138,7 +163,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" --paginate \
-            --jq '.jobs[] | select(.name | test("^(plan|report)$") | not) | [(.name | sub(" [0-9]+$"; "")), .name, .conclusion, ((.completed_at | fromdate) - (.started_at | fromdate))] | @tsv' > jobs.tsv
+            --jq '.jobs[] | select(.name | test("^(plan|playwright|report)$") | not) | [(.name | sub(" [0-9]+$"; "")), .name, .conclusion, ((.completed_at | fromdate) - (.started_at | fromdate))] | @tsv' > jobs.tsv
           {
             echo "## burn-in: ${GITHUB_SHA::7}, retries off, repeat-each $REPEAT_EACH"
             echo
