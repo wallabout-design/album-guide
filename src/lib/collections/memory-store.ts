@@ -60,7 +60,8 @@ export function createMemoryStore(): CollectionStore {
     async insert(record, search, place, maxRecords, entry) {
       const others = current(record.collection);
       if (others.length >= maxRecords) return false;
-      const positions = others.map((r) => r.position);
+      // Past every record, removed ones too, as in sql-store.ts.
+      const positions = rows.filter((r) => r.collection === record.collection).map((r) => r.position);
       const position = positions.length === 0 ? 1 : place === 'first' ? Math.min(...positions) - 1 : Math.max(...positions) + 1;
       rows.push({ ...record, data: { ...record.data }, position, search });
       addHistory(entry);
