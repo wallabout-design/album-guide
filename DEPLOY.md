@@ -36,6 +36,12 @@ before `wrangler deploy`, so a merged migration is applied by the deploy itself.
 Preview uploads apply migrations to the preview database and reload its fake
 data (`scripts/seed-preview.sql`).
 
+**The admin.** https://album.guide/admin is behind the Cloudflare Access application
+"album.guide admin" (one-time PIN by email), and the Worker checks the token and
+the email again (`docs/decisions/0017-admin.md`). Its three settings are Worker
+secrets; `docs/open-items.md` has the command to change who is allowed. On a
+preview the sign-in is the preview code in `wrangler.jsonc`.
+
 DNS for `album.guide` is on Cloudflare; the registration stays at Gandi
 (`docs/decisions/0003-domain.md`). `www.album.guide` redirects to the apex.
 The registration is paid through 2028-09-26 with auto-renew off. Renewing
