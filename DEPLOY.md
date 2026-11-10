@@ -16,14 +16,18 @@ Hosting is Workers static assets (`wrangler.jsonc`;
 and builds every push with `npm run build:production`, which sets
 `VITE_API_BASE=https://album-guide-api.fly.dev`:
 
-- **`main` deploys production** with `npx wrangler deploy`. Merging a PR is the deploy. `main` is
-  protected, so nothing reaches it except through a PR.
-- **Every other branch gets a preview** with `npx wrangler versions upload`, at
-  `https://<branch>-album-guide-site.jj-23b.workers.dev` (branch lowercased,
-  other characters turned into `-`). A PR shows a Workers Builds check; a
-  failed build's log is in the Cloudflare dashboard, linked from the check.
-- There is no separate preview Worker: the site has no data a preview could
-  touch, and previews call the same read-only API.
+- **`main` deploys production** with `npm run ship:production`, on the Worker
+  `album-guide-site`. Merging a PR is the deploy. `main` is protected, so
+  nothing reaches it except through a PR.
+- **Every other branch gets a preview** on a separate Worker,
+  `album-guide-site-preview`, with `npm run ship:branch`, at
+  `https://<branch>-album-guide-site-preview.jj-23b.workers.dev` (branch
+  lowercased, other characters turned into `-`, cut to 38 characters). A PR
+  shows a Workers Builds check; a failed build's log is in the Cloudflare
+  dashboard, linked from the check.
+- The preview Worker shares nothing stored with production
+  (`docs/decisions/0015-preview-worker.md`). No branch builds against the
+  production Worker, which has no `workers.dev` or preview URLs.
 
 DNS for `album.guide` is on Cloudflare; the registration stays at Gandi
 (`docs/decisions/0003-domain.md`). `www.album.guide` redirects to the apex.
@@ -34,8 +38,8 @@ spends money, so it's JJ's decision nearer the date (`docs/open-items.md`).
 previous version; or revert the PR and merge the revert.
 
 **Deploying by hand** is only for when Workers Builds is broken:
-`npm run deploy` (`build:production`, then `wrangler deploy`), from a worktree on an up-to-date
-`main`.
+`npm run deploy` (`build:production`, then `ship:production`), from a worktree on an up-to-date
+`main`. `npm run deploy:preview` does the same for the preview Worker's main URL.
 
 GitHub Pages (`jj-noonan.github.io/album-guide/`) was retired on 2026-11-09,
 once the Worker served album.guide. Don't add a `public/CNAME` or a Pages

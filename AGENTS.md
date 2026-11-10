@@ -37,7 +37,7 @@ Node 24, as CI uses. Run these before opening a PR. CI (`.github/workflows/ci.ym
 - `scripts/`: the Python crawler and backfills (run in the main checkout only), the TypeScript checks, `publish.sh` and `run_jobs.sh`.
 - `api/`: the read-only catalog API that runs on Fly as `album-guide-api`. `DEPLOY.md` covers it.
 - `public/`: brand assets; the rules are in `BRAND.md`.
-- `wrangler.jsonc` and `worker/`: the Cloudflare Worker `album-guide-site` that serves the site.
+- `wrangler.jsonc` and `worker/`: the Cloudflare Worker `album-guide-site` that serves the site, and its preview twin `album-guide-site-preview` (`env.preview`).
 - `src/monitoring.ts`: Sentry in the browser; nothing else imports it. Events go through `/api/sentry` (`worker/sentry.ts`). On a preview, `/?sentry-test=client` throws a test error (`docs/decisions/0011-sentry-setup.md`).
 - `third-parties.json`: every host the page may contact. It drives the content security policy (`worker/security-headers.ts`, copied into `public/_headers`; `npm run test:worker` fails if they differ) and the e2e allow-list (`e2e/network.ts`). A new host means a new entry here (`docs/decisions/0012-security-headers.md`).
 - `docs/business.md`: what the site is for. `docs/decisions/`: decision records; read them before changing hosting, the domain, publishing or error tracking, and add a new record to change one. `docs/open-items.md`: what's waiting on JJ.
@@ -53,7 +53,7 @@ Node 24, as CI uses. Run these before opening a PR. CI (`.github/workflows/ci.ym
 
 ## deploying
 
-Workers Builds builds every push with `npm run build:production` (it sets `VITE_API_BASE` to the Fly API). `main` runs `npx wrangler deploy` to production; every other branch runs `npx wrangler versions upload` to a preview URL, `https://<branch>-album-guide-site.jj-23b.workers.dev`. Merging a PR deploys it, so these rules apply to merging.
+Workers Builds builds every push (`npm run build:production` sets `VITE_API_BASE` to the Fly API). `main` runs `npm run ship:production` on the Worker `album-guide-site`. Every other branch runs `npm run ship:branch`, which uploads a version of the **separate preview Worker** `album-guide-site-preview` at `https://<branch>-album-guide-site-preview.jj-23b.workers.dev` (`docs/decisions/0015-preview-worker.md`). A branch never builds against the production Worker. Merging a PR deploys it, so these rules apply to merging.
 
 - **Agents merge their own PRs** (JJ, 2026-11-09: "i think you're leaving too many decisions for me, reevaluate and lower the bar"). Merge once the required checks (`check`, `e2e`) and the Workers Builds preview pass and the change was checked on the branch preview at mobile and desktop widths. This covers the Worker, `wrangler.jsonc`, the domain and DNS and the API contract too. Record every decision you made in the PR body (`docs/decisions/0014-what-waits-for-jj.md`).
 - **Only these wait for JJ**, labelled `needs-review` and listed in `docs/open-items.md`: anything that needs a secret or 1Password; anything that spends money; a Fly deploy or any change to the Fly app (JJ's; see rules above); destructive changes to production data; and any action a permission check refused, which is never worked around. A failing check is fixed, never merged past.
