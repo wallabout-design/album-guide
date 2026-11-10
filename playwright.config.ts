@@ -1,6 +1,11 @@
+import { createHash } from 'node:crypto';
 import { defineConfig, devices } from '@playwright/test';
 
-const port = 4173;
+// Each checkout gets its own port (from its path), so sessions working in
+// different worktrees can run the tests at the same time without one finding
+// the other's server on its port. E2E_PORT sets it by hand.
+const port =
+  Number(process.env.E2E_PORT) || 4200 + (createHash('sha256').update(process.cwd()).digest().readUInt16BE(0) % 800);
 
 // BASE_URL points the production checks at the live site (production-checks.yml):
 // no local server, Chromium only, and only e2e/production.spec.ts, which uses
