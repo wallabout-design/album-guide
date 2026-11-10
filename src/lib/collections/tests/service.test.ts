@@ -304,13 +304,34 @@ for (const [name, makeStore] of Object.entries(stores)) {
     });
 
     test('only the newest 50 versions of a record are kept', async () => {
-      const service = setup();
+      const store = makeStore();
+      const service = serviceOn(store);
       const made = must(await service.create('things', { title: 'v0' }, STAFF));
       let version = made.updatedAt;
       for (let i = 1; i <= LIMITS.history + 5; i++) version = must(await service.update('things', made.id, { title: `v${i}` }, STAFF, version)).updatedAt;
       const history = must(await service.history('things', made.id));
       assert.equal(history.length, LIMITS.history);
       assert.equal(history[0].data.title, `v${LIMITS.history + 5}`);
+      // Count in the store itself: history() reads at most 50, so it can't show old rows left behind.
+      assert.equal((await store.history('things', made.id, 1_000)).length, LIMITS.history);
+    });
+
+    test("a past version that no longer fits the form can't be brought back", async () => {
+      const store = makeStore();
+      const service = serviceOn(store);
+      const made = must(await service.create('things', { title: 'A longer old title' }, STAFF));
+      must(await service.update('things', made.id, { title: 'Short' }, STAFF, made.updatedAt));
+      const [, first] = must(await service.history('things', made.id));
+      // The form changes: titles may now be at most 10 characters.
+      const rest = everything.fields.slice(1);
+      const title = { name: 'title', label: 'Title', type: 'text', required: true, maxLength: 10 } as const;
+      const tighter = serviceOn(store, [{ ...everything, fields: [title, ...rest] }]);
+      const result = await tighter.revert('things', made.id, first.id, STAFF);
+      assert.equal(!result.ok && result.error.code, 'invalid');
+      assert.ok(!result.ok && result.error.code === 'invalid' && result.error.fields.title);
+      const now = must(await service.get('things', made.id));
+      assert.equal(now.data.title, 'Short');
+      assert.equal(must(await service.history('things', made.id))[0].action, 'update');
     });
 
     test('collections do not see each other’s records', async () => {
