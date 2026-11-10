@@ -149,8 +149,11 @@ async function api(request: Request, env: AdminRouteEnv, email: string, path: st
     if (method === 'PUT') {
       const sent = await readJson(request);
       if (!sent.ok) return sent.response;
-      const ifUpdatedAt = typeof sent.body.updatedAt === 'string' ? sent.body.updatedAt : undefined;
-      return answer(await service.update(name, id, sent.body.data, email, ifUpdatedAt), record);
+      // Without the version the editor loaded, an edit could overwrite someone else's save.
+      if (typeof sent.body.updatedAt !== 'string') {
+        return refuse(400, 'bad_request', 'The edit must say which version of the record it changes (updatedAt).');
+      }
+      return answer(await service.update(name, id, sent.body.data, email, sent.body.updatedAt), record);
     }
     return refuse(405, 'bad_request', 'That is not something this address does.');
   }
