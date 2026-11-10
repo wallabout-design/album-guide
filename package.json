@@ -42,7 +42,8 @@
     "lint:html": "html-validate \"dist/**/*.html\"",
     "test:e2e": "playwright test",
     "screenshots": "SCREENSHOTS=1 playwright test e2e/screenshots.spec.ts",
-    "test:worker": "tsx --test worker/tests/*.test.ts"
+    "test:worker": "tsx --test worker/tests/*.test.ts",
+    "test:lib": "tsx --test src/lib/**/tests/*.test.ts"
   },
   "dependencies": {
     "@fontsource/jost": "^5.3.0",
