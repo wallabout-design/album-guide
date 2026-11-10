@@ -96,7 +96,7 @@ for (const [name, makeStore] of Object.entries(stores)) {
         await service.create('nope', { title: 'x' }, STAFF),
         await service.get('things', 'missing'),
         await service.get('things', "x' OR 1=1 --"),
-        await service.update('things', 'missing', { title: 'x' }, STAFF),
+        await service.update('things', 'missing', { title: 'x' }, STAFF, '2026-01-01T00:00:00.000Z'),
         await service.remove('things', 'missing', STAFF),
       ]) {
         assert.equal(!result.ok && result.error.code, 'not_found');
@@ -167,7 +167,7 @@ for (const [name, makeStore] of Object.entries(stores)) {
       assert.equal(must(await service.listPublished('things')).items.length, 0);
       assert.equal(must(await service.listForStaff('things')).items.length, 0);
       assert.deepEqual(titles(must(await service.listForStaff('things', { show: 'removed' })).items), ['One']);
-      const edit = await service.update('things', made.id, { title: 'x' }, STAFF);
+      const edit = await service.update('things', made.id, { title: 'x' }, STAFF, removed.updatedAt);
       assert.equal(!edit.ok && edit.error.code, 'not_found');
       const back = must(await service.restore('things', made.id, STAFF));
       assert.equal(back.deletedAt, null);
@@ -259,7 +259,7 @@ for (const [name, makeStore] of Object.entries(stores)) {
     test('history lists every change, newest first, and a past version can be brought back', async () => {
       const service = setup();
       const made = must(await service.create('things', { title: 'One' }, STAFF));
-      const two = must(await service.update('things', made.id, { title: 'Two' }, STAFF));
+      const two = must(await service.update('things', made.id, { title: 'Two' }, STAFF, made.updatedAt));
       must(await service.setPublished('things', made.id, true, STAFF));
       const history = must(await service.history('things', made.id));
       assert.deepEqual(history.map((h) => [h.action, h.data.title, h.status]), [
@@ -291,7 +291,8 @@ for (const [name, makeStore] of Object.entries(stores)) {
       const store = makeStore();
       const service = serviceOn(store);
       const made = must(await service.create('things', { title: 'v0' }, STAFF));
-      for (let i = 1; i <= LIMITS.history + 5; i++) must(await service.update('things', made.id, { title: `v${i}` }, STAFF));
+      let version = made.updatedAt;
+      for (let i = 1; i <= LIMITS.history + 5; i++) version = must(await service.update('things', made.id, { title: `v${i}` }, STAFF, version)).updatedAt;
       const history = must(await service.history('things', made.id));
       assert.equal(history.length, LIMITS.history);
       assert.equal(history[0].data.title, `v${LIMITS.history + 5}`);

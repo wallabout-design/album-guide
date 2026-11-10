@@ -233,6 +233,20 @@ test('an edit from a stale copy is a 409 and changes nothing', async () => {
   assert.equal(((await (await staff('GET', base)).json()) as Body).record.data.title, 'First');
 });
 
+test('an edit that does not say which version it changes is a 400 and changes nothing', async () => {
+  const { staff, add } = await site();
+  const made = await add(1);
+  const base = `/admin/api/collections/picks/${made.id}`;
+  for (const updatedAt of [undefined, 123]) {
+    const res = await staff('PUT', base, { data: pick(1, { title: 'Overwritten' }), updatedAt });
+    assert.equal(res.status, 400);
+    assert.equal(((await res.json()) as Body).code, 'bad_request');
+  }
+  const record = ((await (await staff('GET', base)).json()) as Body).record;
+  assert.equal(record.data.title, made.data.title);
+  assert.equal(record.updatedAt, made.updatedAt);
+});
+
 test('the staff list has the definition, a total, search and pages', async () => {
   const { staff, add } = await site();
   for (let n = 1; n <= 25; n++) await add(n);
