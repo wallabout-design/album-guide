@@ -5,7 +5,7 @@ One file per decision that is expensive to reverse or likely to be questioned. N
 | # | decision | status |
 | --- | --- | --- |
 | [0001](0001-transfer-to-wallabout-design.md) | move the repo to wallabout-design now | accepted |
-| [0002](0002-hosting.md) | Workers static assets and Workers Builds, with no separate preview Worker | accepted |
+| [0002](0002-hosting.md) | Workers static assets and Workers Builds, with no separate preview Worker | accepted; the preview part superseded by 0015 |
 | [0003](0003-domain.md) | album.guide on Cloudflare DNS as production; registration stays at Gandi | accepted |
 | [0004](0004-error-tracking.md) | Sentry for browser errors, tunnelled through the Worker | accepted |
 | [0005](0005-search-basics.md) | the site is public and meant to be found, so search basics apply | accepted |
@@ -15,9 +15,10 @@ One file per decision that is expensive to reverse or likely to be questioned. N
 | [0009](0009-telemetry.md) | first-party telemetry through the Worker's `/api/event` | accepted |
 | [0010](0010-real-404-and-root-base.md) | a real 404 page, and root-relative asset URLs | accepted |
 | [0011](0011-sentry-setup.md) | how Sentry is wired in | accepted |
+| [0012](0012-security-headers.md) | a content security policy and hardening headers, built from `third-parties.json` | accepted |
+| [0013](0013-production-checks.md) | scheduled checks against production | accepted |
 | [0014](0014-what-waits-for-jj.md) | agents decide and merge; only secrets, money, Fly and refused actions wait for JJ | accepted |
-
-0012 and 0013 are taken by open PRs; add their rows when they merge.
+| [0015](0015-preview-worker.md) | a separate preview Worker | accepted |
 
 ## adding one
 

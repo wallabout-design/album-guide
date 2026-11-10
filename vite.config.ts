@@ -24,6 +24,9 @@ function buildSha(): string {
 // Sentry off, so only deployed pages report errors.
 function sentryEnvironment(): string {
   if (process.env.WORKERS_CI !== '1') return ''
+  // The preview Worker also builds main, for its own main URL
+  // (npm run build:preview; docs/decisions/0015-preview-worker.md).
+  if (process.env.PREVIEW_WORKER === '1') return 'preview'
   return process.env.WORKERS_CI_BRANCH === 'main' ? 'production' : 'preview'
 }
 

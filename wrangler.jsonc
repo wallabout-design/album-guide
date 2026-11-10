@@ -1,7 +1,7 @@
 // Cloudflare Workers static assets. Workers Builds builds every push: main
-// deploys to production, other branches upload a preview version with its own
-// URL. The site keeps no data of its own (the catalog API is album-guide-api on
-// Fly), so there is no separate preview Worker.
+// deploys this Worker to production; every other branch uploads a version of
+// the separate preview Worker (env.preview below), never of this one.
+// See docs/decisions/0015-preview-worker.md.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "album-guide-site",
@@ -27,12 +27,30 @@
     { "pattern": "album.guide", "custom_domain": true },
     { "pattern": "www.album.guide", "custom_domain": true },
   ],
-  // workers.dev stays on because preview URLs live there.
-  "workers_dev": true,
+  // Production answers on album.guide only. Previews live on the preview
+  // Worker (env.preview), so no branch version of this Worker gets a URL.
+  "workers_dev": false,
+  "preview_urls": false,
   // First-party telemetry (standards/telemetry.md). The account's shared
   // site_events dataset, keyed by site id "album-guide". Nothing is written
   // until the TELEMETRY_SALT secret is set (docs/open-items.md).
   "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "site_events" }],
-  "preview_urls": true,
   "observability": { "enabled": true },
+  "env": {
+    // The preview Worker: every branch gets its URL here,
+    // https://<branch>-album-guide-site-preview.jj-23b.workers.dev. It has no
+    // routes and none of production's secrets, so a preview can't reach
+    // anything production owns. Env config doesn't inherit bindings, so
+    // everything is declared again. Uploaded with `--env preview`
+    // (npm run ship:branch); docs/decisions/0015-preview-worker.md.
+    "preview": {
+      "name": "album-guide-site-preview",
+      "workers_dev": true,
+      "preview_urls": true,
+      "routes": [],
+      // Declared so /api/event behaves as in production. With no
+      // TELEMETRY_SALT secret on this Worker, nothing is written.
+      "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "site_events" }],
+    },
+  },
 }
