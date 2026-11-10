@@ -17,7 +17,7 @@ Clone: `git clone https://github.com/wallabout-design/album-guide.git` (moved fr
 
 ## commands
 
-Node 24, as CI uses. Run these before opening a PR. CI (`.github/workflows/ci.yml`) runs them on every PR: `check` and `e2e` are required, `screenshots` is not.
+Node 24 (`.nvmrc`, which CI and Workers Builds read). Run these before opening a PR. CI (`.github/workflows/ci.yml`) runs them on every PR: `check` and `e2e` are required, `screenshots` is not.
 
 - `npx tsc -b`: type check
 - `npm run lint`: oxlint
