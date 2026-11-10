@@ -1,8 +1,11 @@
 // The site's only server code. It runs first for every request
 // (`assets.run_worker_first: true` in wrangler.jsonc): www.album.guide gets a
-// 301 to album.guide, /api/* goes to `routes` below or to the collections list
+// 301 to album.guide, /admin and /admin/* go to worker/admin.ts (staff only),
+// /api/* goes to `routes` below or to the collections list
 // (anything else under /api/* is a JSON 404), and every other path is served
 // from dist/ by ASSETS, which also answers unknown paths with 404.html.
+import { handleAdmin, isAdminPath } from './admin';
+import type { AdminEnv } from './admin-auth';
 import { publicList, type CollectionsEnv } from './collections';
 import { withSecurityHeaders } from './security-headers';
 import { SENTRY_TUNNEL_PATH, sentryTunnel } from './sentry';
@@ -14,7 +17,7 @@ import { dataPoint, EVENT_PATH, MAX_BODY_BYTES, parseEvent, shouldDrop, visitorH
 // telemetry two are optional so a missing one means "write nothing", never an
 // error: TELEMETRY_SALT is unset until JJ adds it (docs/open-items.md), and a
 // visitor hash must never use an empty salt.
-export interface Env extends CollectionsEnv {
+export interface Env extends CollectionsEnv, AdminEnv {
   ASSETS: Fetcher;
   EVENTS?: { writeDataPoint(point: ReturnType<typeof dataPoint>): void };
   TELEMETRY_SALT?: string;
@@ -81,6 +84,8 @@ async function handle(request: Request, env: Env): Promise<Response> {
     return Response.redirect(url.toString(), 301);
   }
   const { pathname } = url;
+  // Staff only: the admin page and its API (worker/admin.ts).
+  if (isAdminPath(pathname)) return handleAdmin(request, env);
   if (pathname !== '/api' && !pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
   // The public list of a collection (worker/collections.ts).
   const list = /^\/api\/collections\/([^/]+)$/.exec(pathname);

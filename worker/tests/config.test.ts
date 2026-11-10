@@ -33,3 +33,13 @@ test('production and preview use different databases, and neither config turns o
   assert.equal(rawConfig.vars?.TEST_COLLECTIONS, undefined);
   assert.equal(preview?.vars?.TEST_COLLECTIONS, undefined);
 });
+
+test('only the preview Worker has the test sign-in code', () => {
+  assert.equal(rawConfig.vars?.ADMIN_TEST_CODE, undefined);
+  assert.equal(typeof preview?.vars?.ADMIN_TEST_CODE, 'string');
+  // The admin's real settings are secrets on the production Worker, never vars in this public file.
+  for (const name of ['ACCESS_TEAM_DOMAIN', 'ACCESS_AUD', 'ADMIN_EMAILS']) {
+    assert.equal(rawConfig.vars?.[name], undefined, name);
+    assert.equal(preview?.vars?.[name], undefined, name);
+  }
+});
