@@ -72,6 +72,7 @@ jobs:
       - run: npm run dist-check
       - run: npm run eval
       - run: npm run test:worker
+      - run: npm run test:lib
 
   # Playwright against the production build in workerd (as `e2e` in ci.yml).
   e2e:
