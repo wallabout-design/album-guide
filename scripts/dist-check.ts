@@ -15,7 +15,7 @@ import { JSDOM } from 'jsdom';
 const dist = new URL('../dist/', import.meta.url);
 const html = readFileSync(new URL('index.html', dist), 'utf8');
 const assets = readdirSync(new URL('assets/', dist));
-// The app's own script: what index.html loads. The other pages (admin.html)
+// The app's own script: what index.html loads. The other pages (admin.html, picks.html)
 // are built separately (vite.pages.config.ts) and have their own files in
 // assets/, which must not be run as part of the app below.
 const appScripts = [...html.matchAll(/<script[^>]+src="\/assets\/([^"]+\.js)"/g)].map((m) => m[1]);
@@ -45,7 +45,7 @@ for (const [what, needle] of [
 // Root-relative asset paths. The site is served at the domain root, and the 404
 // page is served at any depth, where a relative path resolves under the missing
 // one and the page renders blank (docs/decisions/0010-real-404-and-root-base.md).
-for (const page of ['index.html', '404.html', 'admin.html']) {
+for (const page of ['index.html', '404.html', 'admin.html', 'picks.html']) {
   const text = readFileSync(new URL(page, dist), 'utf8');
   for (const m of text.matchAll(/(?:src|href)="([^"]+)"/g)) {
     const url = m[1];
@@ -62,7 +62,7 @@ for (const page of ['index.html', '404.html', 'admin.html']) {
 
 // The small pages stay small: none of them may pull in the catalog, which is
 // most of the app's 6.8 MB. Everything a page loads, added up.
-for (const page of ['admin.html']) {
+for (const page of ['admin.html', 'picks.html']) {
   const text = readFileSync(new URL(page, dist), 'utf8');
   const loaded = [...text.matchAll(/(?:src|href)="\/assets\/([^"]+\.js)"/g)].map((m) => m[1]);
   const size = loaded.reduce((sum, f) => sum + readFileSync(new URL(`assets/${f}`, dist)).length, 0);
