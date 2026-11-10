@@ -19,13 +19,26 @@ const HTML = /<\s*[A-Za-z/!?]/;
 // Unicode line and paragraph separators, and the byte order mark.
 // oxlint-disable-next-line no-control-regex
 const CONTROL = new RegExp('[\\u0000-\\u0008\\u000B-\\u001F\\u007F-\\u009F\\u2028\\u2029\\uFEFF]', 'g');
+// Invisible characters that text pasted from Word or a web page often carries:
+// zero width space, word joiner, soft hyphen, Mongolian vowel separator, and
+// the direction controls (marks, embeddings, overrides, isolates). They are
+// removed quietly. A direction override would make the shown text differ from
+// the stored text. Zero width joiner and non-joiner (U+200C, U+200D) stay:
+// emoji sequences and Persian words need them.
+const INVISIBLE = /[\u00AD\u180E\u200B\u200E\u200F\u202A-\u202E\u2060\u2066-\u2069]/g;
+// What can't be seen on its own: format characters, spaces and separators,
+// combining marks and whitespace. A value made only of these counts as empty.
+const UNSEEN = /[\p{Cf}\p{Z}\p{M}\s]/gu;
+// More combining marks in a row than any language needs on one letter.
+const MAX_MARKS = 4;
+const STACKED_MARKS = new RegExp(`\\p{M}{${MAX_MARKS + 1},}`, 'u');
 const IMAGE_PATH = /^\/media\/[A-Za-z0-9][A-Za-z0-9_-]*(?:\/[A-Za-z0-9][A-Za-z0-9_-]*)*\.(?:jpg|png|webp)$/;
 
 const characters = (text: string) => [...text].length;
 const bytes = (text: string) => new TextEncoder().encode(text).length;
 
 function oneLine(value: string): string {
-  return value.normalize('NFC').replace(/\s+/g, ' ').replace(CONTROL, '').trim();
+  return value.normalize('NFC').replace(/\s+/g, ' ').replace(CONTROL, '').replace(INVISIBLE, '').replace(/ {2,}/g, ' ').trim();
 }
 
 function manyLines(value: string): string {
@@ -34,6 +47,7 @@ function manyLines(value: string): string {
     .replace(/\r\n?/g, '\n')
     .replace(/\t/g, ' ')
     .replace(CONTROL, '')
+    .replace(INVISIBLE, '')
     .replace(/[ ]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
@@ -47,7 +61,13 @@ type Checked = { value: string | number | boolean } | { error: string };
 
 function checkText(field: FieldDefinition, raw: unknown, max: number, clean: (v: string) => string): Checked {
   if (typeof raw !== 'string') return { error: `${field.label} must be text.` };
-  const value = clean(raw);
+  const cleaned = clean(raw);
+  // Nothing visible left (only zero width joiners, combining marks, spaces):
+  // treated as blank, so a required field reports that it is needed.
+  const value = cleaned.replace(UNSEEN, '') === '' ? '' : cleaned;
+  if (STACKED_MARKS.test(value)) {
+    return { error: `${field.label} has too many accents on one letter. Please remove the extra ones.` };
+  }
   if (HTML.test(value)) {
     return { error: `${field.label} can't contain HTML tags (text like <b>). Please remove them.` };
   }
