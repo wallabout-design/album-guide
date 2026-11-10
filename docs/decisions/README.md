@@ -20,6 +20,7 @@ One file per decision that is expensive to reverse or likely to be questioned. N
 | [0014](0014-what-waits-for-jj.md) | agents decide and merge; only secrets, money, Fly and refused actions wait for JJ | accepted |
 | [0015](0015-preview-worker.md) | a separate preview Worker | accepted |
 | [0016](0016-collections.md) | staff-managed collections on D1, with the admin as a separate entry | provisional |
+| [0017](0017-admin.md) | `/admin` behind Cloudflare Access, checked again in the Worker | provisional |
 
 ## adding one
 
