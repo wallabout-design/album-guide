@@ -15,7 +15,11 @@ import { JSDOM } from 'jsdom';
 const dist = new URL('../dist/', import.meta.url);
 const html = readFileSync(new URL('index.html', dist), 'utf8');
 const assets = readdirSync(new URL('assets/', dist));
-const js = assets.filter((f) => f.endsWith('.js'));
+// The app's own script: what index.html loads. The other pages (admin.html)
+// are built separately (vite.pages.config.ts) and have their own files in
+// assets/, which must not be run as part of the app below.
+const appScripts = [...html.matchAll(/<script[^>]+src="\/assets\/([^"]+\.js)"/g)].map((m) => m[1]);
+const js = assets.filter((f) => appScripts.includes(f));
 const css = assets.filter((f) => f.endsWith('.css'));
 
 const problems: string[] = [];
@@ -41,7 +45,7 @@ for (const [what, needle] of [
 // Root-relative asset paths. The site is served at the domain root, and the 404
 // page is served at any depth, where a relative path resolves under the missing
 // one and the page renders blank (docs/decisions/0010-real-404-and-root-base.md).
-for (const page of ['index.html', '404.html']) {
+for (const page of ['index.html', '404.html', 'admin.html']) {
   const text = readFileSync(new URL(page, dist), 'utf8');
   for (const m of text.matchAll(/(?:src|href)="([^"]+)"/g)) {
     const url = m[1];
@@ -54,6 +58,18 @@ for (const page of ['index.html', '404.html']) {
   if (!/<meta name="build" content="(?:[0-9a-f]{7}|dev)"/.test(text)) {
     problems.push(`${page}: no <meta name="build"> with the commit`);
   }
+}
+
+// The small pages stay small: none of them may pull in the catalog, which is
+// most of the app's 6.8 MB. Everything a page loads, added up.
+for (const page of ['admin.html']) {
+  const text = readFileSync(new URL(page, dist), 'utf8');
+  const loaded = [...text.matchAll(/(?:src|href)="\/assets\/([^"]+\.js)"/g)].map((m) => m[1]);
+  const size = loaded.reduce((sum, f) => sum + readFileSync(new URL(`assets/${f}`, dist)).length, 0);
+  console.log(`${page.padEnd(12)} ${loaded.length} script(s), ${(size / 1024).toFixed(0)} KB`);
+  if (loaded.length === 0) problems.push(`${page} loads no script`);
+  if (size > 600 * 1024) problems.push(`${page} loads ${(size / 1024).toFixed(0)} KB of script: has it pulled in the catalog?`);
+  if (loaded.some((f) => appScripts.includes(f))) problems.push(`${page} loads the app's bundle`);
 }
 
 /*

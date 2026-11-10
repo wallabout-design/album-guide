@@ -8,7 +8,7 @@ import { defineConfig, type Connect, type Plugin } from 'vite'
 // and the pages' <meta name="build"> (the feedback link puts it in every note).
 // Workers Builds sets WORKERS_CI_COMMIT_SHA; locally, ask git. "dev" when
 // neither is available, which the Worker stores as an empty build.
-function buildSha(): string {
+export function buildSha(): string {
   const fromCi = process.env.WORKERS_CI_COMMIT_SHA
   if (fromCi) return fromCi.slice(0, 7)
   try {
