@@ -55,14 +55,15 @@
     "@sentry/react": "11.11.0",
     "@wallabout-design/feedback": "github:wallabout-design/feedback#v0.3.0",
     "isbot": "5.2.2",
+    "jose": "^6.2.17",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "web-vitals": "6.2.3"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
-    "@playwright/test": "^1.65.0",
     "@cloudflare/workers-types": "^5.20261109.1",
+    "@playwright/test": "^1.65.0",
     "@sentry/vite-plugin": "11.11.0",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",

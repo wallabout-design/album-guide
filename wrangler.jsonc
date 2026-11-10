@@ -61,6 +61,11 @@
       // Declared so /api/event behaves as in production. With no
       // TELEMETRY_SALT secret on this Worker, nothing is written.
       "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "site_events" }],
+      // The sign-in for /admin on previews, where there is no Cloudflare
+      // Access: a fixed code, public on purpose (the preview's data is fake).
+      // Production declares no such var and refuses it on album.guide
+      // (worker/admin-auth.ts; docs/decisions/0017-admin.md).
+      "vars": { "ADMIN_TEST_CODE": "sleeve-notes" },
       // Its own database, shared by every branch preview: migrations/ plus
       // the fake picks in scripts/seed-preview.sql, both applied on upload.
       "d1_databases": [
