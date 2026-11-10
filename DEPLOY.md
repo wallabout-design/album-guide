@@ -29,6 +29,13 @@ and builds every push with `npm run build:production`, which sets
   (`docs/decisions/0015-preview-worker.md`). No branch builds against the
   production Worker, which has no `workers.dev` or preview URLs.
 
+**The database.** Staff-managed collections live in D1 (`docs/decisions/0016-collections.md`):
+`album-guide` for production, `album-guide-preview` for every preview.
+`npm run ship:production` runs `wrangler d1 migrations apply album-guide --remote`
+before `wrangler deploy`, so a merged migration is applied by the deploy itself.
+Preview uploads apply migrations to the preview database and reload its fake
+data (`scripts/seed-preview.sql`).
+
 DNS for `album.guide` is on Cloudflare; the registration stays at Gandi
 (`docs/decisions/0003-domain.md`). `www.album.guide` redirects to the apex.
 The registration is paid through 2028-09-26 with auto-renew off. Renewing

@@ -7,3 +7,4 @@ export * from './store';
 export * from './service';
 export { createSqlStore, type SqlDatabase, type SqlStatement } from './sql-store';
 export { createMemoryStore } from './memory-store';
+export { exampleCollection } from './testing';

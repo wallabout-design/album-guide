@@ -36,6 +36,16 @@
   // until the TELEMETRY_SALT secret is set (docs/open-items.md).
   "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "site_events" }],
   "observability": { "enabled": true },
+  // Staff-managed collections (src/lib/collections, src/collections.ts).
+  // `npm run ship:production` applies migrations/ before each deploy.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "album-guide",
+      "database_id": "5c602e10-7872-423d-9f53-95225326b3e4",
+      "migrations_dir": "migrations",
+    },
+  ],
   "env": {
     // The preview Worker: every branch gets its URL here,
     // https://<branch>-album-guide-site-preview.jj-23b.workers.dev. It has no
@@ -51,6 +61,16 @@
       // Declared so /api/event behaves as in production. With no
       // TELEMETRY_SALT secret on this Worker, nothing is written.
       "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "site_events" }],
+      // Its own database, shared by every branch preview: migrations/ plus
+      // the fake picks in scripts/seed-preview.sql, both applied on upload.
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "album-guide-preview",
+          "database_id": "81d92323-3580-452a-9bc3-65f3977633cb",
+          "migrations_dir": "migrations",
+        },
+      ],
     },
   },
 }
