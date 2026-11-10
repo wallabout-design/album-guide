@@ -21,3 +21,15 @@ test('the preview Worker is a different Worker with no routes', () => {
   assert.deepEqual(preview.routes, []);
   assert.equal(preview.preview_urls, true);
 });
+
+test('production and preview use different databases, and neither config turns on test collections', () => {
+  type Database = { binding: string; database_name?: string; database_id?: string };
+  const production: Database[] = rawConfig.d1_databases ?? [];
+  const forPreview: Database[] = preview?.d1_databases ?? [];
+  assert.deepEqual(production.map((d) => [d.binding, d.database_name]), [['DB', 'album-guide']]);
+  assert.deepEqual(forPreview.map((d) => [d.binding, d.database_name]), [['DB', 'album-guide-preview']]);
+  assert.notEqual(production[0].database_id, forPreview[0].database_id);
+  // TEST_COLLECTIONS is passed only by `npm run e2e:server`, to a local Worker.
+  assert.equal(rawConfig.vars?.TEST_COLLECTIONS, undefined);
+  assert.equal(preview?.vars?.TEST_COLLECTIONS, undefined);
+});

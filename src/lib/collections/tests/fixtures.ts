@@ -1,28 +1,10 @@
 import { createCollections } from '../service';
 import type { CollectionStore } from '../store';
+import { exampleCollection } from '../testing';
 import type { CollectionDefinition } from '../types';
 
 /** A collection with one field of every type. */
-export const everything: CollectionDefinition = {
-  name: 'things',
-  label: 'Things',
-  singular: 'thing',
-  titleField: 'title',
-  sort: { by: 'position' },
-  pageSize: 3,
-  maxRecords: 8,
-  fields: [
-    { name: 'title', label: 'Title', type: 'text', required: true, maxLength: 20 },
-    { name: 'note', label: 'Note', type: 'longtext', maxLength: 50 },
-    { name: 'link', label: 'Link', type: 'url' },
-    { name: 'year', label: 'Year', type: 'number', integer: true, min: 1900, max: 2100 },
-    { name: 'day', label: 'Day', type: 'date' },
-    { name: 'featured', label: 'Featured', type: 'boolean' },
-    { name: 'kind', label: 'Kind', type: 'select', options: [{ value: 'a', label: 'Alpha' }, { value: 'b', label: 'Beta' }] },
-    { name: 'photo', label: 'Photo', type: 'image' },
-    { name: 'ref', label: 'Reference', type: 'reference', pattern: '[a-f0-9]{8}', example: '0123abcd' },
-  ],
-};
+export const everything: CollectionDefinition = exampleCollection('things');
 
 /** Sorted by a required field, newest year first. */
 export const byYear: CollectionDefinition = {

@@ -39,6 +39,7 @@ Node 24, as CI uses. Run these before opening a PR. CI (`.github/workflows/ci.ym
 - `scripts/`: the Python crawler and backfills (run in the main checkout only), the TypeScript checks, `publish.sh` and `run_jobs.sh`.
 - `api/`: the read-only catalog API that runs on Fly as `album-guide-api`. `DEPLOY.md` covers it.
 - `public/`: brand assets; the rules are in `BRAND.md`.
+- `src/collections.ts`: the collections this site has (staff picks). `worker/collections.ts` serves `GET /api/collections/<name>`; `migrations/` is applied by `npm run ship:production` on deploy; `scripts/seed-preview.sql` fills the preview and e2e databases (`docs/decisions/0016-collections.md`).
 - `wrangler.jsonc` and `worker/`: the Cloudflare Worker `album-guide-site` that serves the site, and its preview twin `album-guide-site-preview` (`env.preview`).
 - `src/monitoring.ts`: Sentry in the browser; nothing else imports it. Events go through `/api/sentry` (`worker/sentry.ts`). On a preview, `/?sentry-test=client` throws a test error (`docs/decisions/0011-sentry-setup.md`).
 - `third-parties.json`: every host the page may contact. It drives the content security policy (`worker/security-headers.ts`, copied into `public/_headers`; `npm run test:worker` fails if they differ) and the e2e allow-list (`e2e/network.ts`). A new host means a new entry here (`docs/decisions/0012-security-headers.md`).

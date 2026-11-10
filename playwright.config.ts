@@ -29,11 +29,13 @@ export default defineConfig({
   // The production build, pointed at the production API as deploys are, served
   // by the Worker in workerd (`wrangler dev`) as production serves it: the 404
   // page, /api/event and asset headers behave as they do on album.guide. The
-  // tests mock the API (e2e/network.ts), so nothing reaches Fly.
+  // tests mock the API (e2e/network.ts), so nothing reaches Fly. It runs the
+  // preview Worker's config with a fresh local database each time: migrations
+  // plus scripts/seed-preview.sql (`npm run e2e:server`).
   webServer: baseURL
     ? undefined
     : {
-        command: `npm run build:production && npx wrangler dev --port ${port} --ip 127.0.0.1`,
+        command: `npm run build:production && npm run e2e:server -- --port ${port}`,
         env: { WRANGLER_SEND_METRICS: 'false' },
         url: `http://127.0.0.1:${port}`,
         // Never reuse: a stray server would serve a stale build and still pass.
