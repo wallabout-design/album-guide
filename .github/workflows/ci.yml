@@ -30,6 +30,8 @@ jobs:
       # The Worker config and code, as Workers Builds deploys them (bundles
       # worker/ and reads dist/ without uploading anything).
       - run: npx wrangler deploy --dry-run --outdir .wrangler/dry-run
+      # The preview Worker's config too (docs/decisions/0015-preview-worker.md).
+      - run: npx wrangler deploy --dry-run --env preview --outdir .wrangler/dry-run-preview
       - run: npm run lint:html
       - run: npm run lint
       - run: npm run check
@@ -38,6 +40,8 @@ jobs:
       - run: npm run dist-check
       - run: npm run eval
       - run: npm run test:worker
+      # Plain-TypeScript logic under src/lib (collections).
+      - run: npm run test:lib
 
   # Every view in Chromium and WebKit against the production build, with the
   # API and cover art mocked (e2e/network.ts); see playwright.config.ts.

@@ -24,6 +24,7 @@ Node 24 (`.nvmrc`, which CI and Workers Builds read). Run these before opening a
 - `npm run build`: type check and build to `dist/` (bundled catalog only). `npm run build:production` adds the Fly API address, as Workers Builds does
 - `npm run check`: server-render the app and assert its structure. Also `npm run click-check`, `npm run feedback-check`, `npm run dist-check` (after a build); none needs the network. `npm run api-wire-check` needs a local API, so CI skips it
 - `npm run test:worker`: the Worker's unit tests (`worker/tests/`)
+- `npm run test:lib`: unit tests of the plain-TypeScript logic under `src/lib/` (collections: validation, pagination, the service against a fake store and against real SQLite with the migration)
 - `npm run lint:html`: html-validate on `dist/` (after a build)
 - `npm run test:e2e`: Playwright in Chromium and WebKit on every view (home, About, search, debug: `e2e/routes.ts`) against the production build: status 200, no console errors, no hosts but the mocked Fly API and cover art (`e2e/network.ts`), axe in light and dark, no horizontal scroll at 360 to 1440px. Run `npx playwright install chromium webkit` once first. Add a view to `e2e/routes.ts` when you add one
 - `npm run screenshots`: every view at each width, theme and browser into `screenshots/`; CI attaches them to the PR
@@ -33,11 +34,12 @@ Node 24 (`.nvmrc`, which CI and Workers Builds read). Run these before opening a
 
 ## where things are
 
+- `src/lib/collections/`: collections, the records staff add and edit. Plain TypeScript with no React, Worker or D1 imports, so it can move to a shared package; `migrations/` holds its one schema.
 - `src/`: the React app. `src/data/` holds the bundled catalog (`catalog.json`), the corridors, the lexicon and the schema.
 - `scripts/`: the Python crawler and backfills (run in the main checkout only), the TypeScript checks, `publish.sh` and `run_jobs.sh`.
 - `api/`: the read-only catalog API that runs on Fly as `album-guide-api`. `DEPLOY.md` covers it.
 - `public/`: brand assets; the rules are in `BRAND.md`.
-- `wrangler.jsonc` and `worker/`: the Cloudflare Worker `album-guide-site` that serves the site.
+- `wrangler.jsonc` and `worker/`: the Cloudflare Worker `album-guide-site` that serves the site, and its preview twin `album-guide-site-preview` (`env.preview`).
 - `src/monitoring.ts`: Sentry in the browser; nothing else imports it. Events go through `/api/sentry` (`worker/sentry.ts`). On a preview, `/?sentry-test=client` throws a test error (`docs/decisions/0011-sentry-setup.md`).
 - `third-parties.json`: every host the page may contact. It drives the content security policy (`worker/security-headers.ts`, copied into `public/_headers`; `npm run test:worker` fails if they differ) and the e2e allow-list (`e2e/network.ts`). A new host means a new entry here (`docs/decisions/0012-security-headers.md`).
 - `docs/business.md`: what the site is for. `docs/decisions/`: decision records; read them before changing hosting, the domain, publishing or error tracking, and add a new record to change one. `docs/open-items.md`: what's waiting on JJ.
@@ -53,7 +55,7 @@ Node 24 (`.nvmrc`, which CI and Workers Builds read). Run these before opening a
 
 ## deploying
 
-Workers Builds builds every push with `npm run build:production` (it sets `VITE_API_BASE` to the Fly API). `main` runs `npx wrangler deploy` to production; every other branch runs `npx wrangler versions upload` to a preview URL, `https://<branch>-album-guide-site.jj-23b.workers.dev`. Merging a PR deploys it, so these rules apply to merging.
+Workers Builds builds every push (`npm run build:production` sets `VITE_API_BASE` to the Fly API). `main` runs `npm run ship:production` on the Worker `album-guide-site`. Every other branch runs `npm run ship:branch`, which uploads a version of the **separate preview Worker** `album-guide-site-preview` at `https://<branch>-album-guide-site-preview.jj-23b.workers.dev` (`docs/decisions/0015-preview-worker.md`). A branch never builds against the production Worker. Merging a PR deploys it, so these rules apply to merging.
 
 - **Agents merge their own PRs** (JJ, 2026-11-09: "i think you're leaving too many decisions for me, reevaluate and lower the bar"). Merge once the required checks (`check`, `e2e`) and the Workers Builds preview pass and the change was checked on the branch preview at mobile and desktop widths. This covers the Worker, `wrangler.jsonc`, the domain and DNS and the API contract too. Record every decision you made in the PR body (`docs/decisions/0014-what-waits-for-jj.md`).
 - **Only these wait for JJ**, labelled `needs-review` and listed in `docs/open-items.md`: anything that needs a secret or 1Password; anything that spends money; a Fly deploy or any change to the Fly app (JJ's; see rules above); destructive changes to production data; and any action a permission check refused, which is never worked around. A failing check is fixed, never merged past.

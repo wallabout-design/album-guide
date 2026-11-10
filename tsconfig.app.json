@@ -25,5 +25,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Unit tests under src/lib run in Node; tsconfig.worker-tests.json checks them.
+  "exclude": ["src/lib/**/tests"]
 }

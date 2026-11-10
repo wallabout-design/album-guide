@@ -9,7 +9,12 @@
     "build:production": "VITE_API_BASE=https://album-guide-api.fly.dev npm run build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "deploy": "npm run build:production && wrangler deploy",
+    "build:preview": "PREVIEW_WORKER=1 npm run build:production",
+    "deploy": "npm run build:production && npm run ship:production",
+    "deploy:preview": "npm run build:preview && npm run ship:preview",
+    "ship:production": "wrangler deploy",
+    "ship:preview": "wrangler deploy --env preview",
+    "ship:branch": "node scripts/upload-preview.mjs",
     "cf-typegen": "wrangler types",
     "crawl": ".venv/bin/python -u scripts/crawl.py",
     "walk": "vite-node scripts/walk.ts --",
@@ -37,7 +42,8 @@
     "lint:html": "html-validate \"dist/**/*.html\"",
     "test:e2e": "playwright test",
     "screenshots": "SCREENSHOTS=1 playwright test e2e/screenshots.spec.ts",
-    "test:worker": "tsx --test worker/tests/*.test.ts"
+    "test:worker": "tsx --test worker/tests/*.test.ts",
+    "test:lib": "tsx --test src/lib/**/tests/*.test.ts"
   },
   "dependencies": {
     "@fontsource/jost": "^5.3.0",

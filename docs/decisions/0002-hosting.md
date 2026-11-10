@@ -1,6 +1,6 @@
 # 0002: Workers static assets and Workers Builds, with no separate preview Worker
 
-**Status:** accepted, 2026-11-08 (JJ; the no-preview-Worker part was decided during the build). Replaces GitHub Pages, which is being retired.
+**Status:** accepted, 2026-11-08 (JJ; the no-preview-Worker part was decided during the build). Replaces GitHub Pages, which is being retired. The "no separate preview Worker" part is superseded by [0015](0015-preview-worker.md) (2026-11-10).
 
 ## context
 

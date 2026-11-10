@@ -1,0 +1,316 @@
+// The service, run against both stores: the in-memory fake and the real SQL
+// on SQLite with the migration applied. Every case must pass on both, which
+// is also what keeps the fake honest.
+import assert from 'node:assert/strict';
+import { describe, test } from 'node:test';
+import { createMemoryStore } from '../memory-store';
+import { createCollections, type Page } from '../service';
+import { createSqlStore } from '../sql-store';
+import type { CollectionStore } from '../store';
+import { LIMITS, type PublicRecord } from '../types';
+import { byYear, everything, must, serviceOn, STAFF } from './fixtures';
+import { createTestDatabase } from './sqlite';
+
+const stores: Record<string, () => CollectionStore> = {
+  'memory store': createMemoryStore,
+  'sql store': () => createSqlStore(createTestDatabase()),
+};
+
+for (const [name, makeStore] of Object.entries(stores)) {
+  describe(name, () => {
+    const setup = () => serviceOn(makeStore());
+
+    async function seeded(count: number, publish = true) {
+      const service = setup();
+      for (let i = 1; i <= count; i++) must(await service.create('things', { title: `Thing ${i}` }, STAFF, publish));
+      return service;
+    }
+
+    const titles = (items: { data: Record<string, unknown> }[]) => items.map((r) => r.data.title);
+
+    test('a new record is a draft, and the public list shows only published records', async () => {
+      const service = setup();
+      const draft = must(await service.create('things', { title: 'Draft' }, STAFF));
+      assert.equal(draft.status, 'draft');
+      assert.equal(draft.updatedBy, STAFF);
+      must(await service.create('things', { title: 'Live' }, STAFF, true));
+      assert.deepEqual(titles(must(await service.listPublished('things')).items), ['Live']);
+      assert.deepEqual(titles(must(await service.listForStaff('things')).items), ['Draft', 'Live']);
+    });
+
+    test('the public list never carries who edited a record', async () => {
+      const service = await seeded(1);
+      const [item] = must(await service.listPublished('things')).items;
+      assert.deepEqual(Object.keys(item).sort(), ['data', 'id', 'updatedAt']);
+      assert.ok(!JSON.stringify(item).includes(STAFF));
+    });
+
+    test('pages follow one another with no record repeated or missed', async () => {
+      const service = await seeded(8);
+      const seen: unknown[] = [];
+      let cursor: string | null = null;
+      let pages = 0;
+      do {
+        const page: Page<PublicRecord> = must(await service.listPublished('things', { cursor }));
+        assert.ok(page.items.length <= 3);
+        seen.push(...titles(page.items));
+        cursor = page.nextCursor;
+        pages++;
+      } while (cursor);
+      assert.equal(pages, 3);
+      assert.deepEqual(seen, [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `Thing ${i}`));
+    });
+
+    test('the last page has no cursor even when it is exactly full', async () => {
+      const service = await seeded(6);
+      const first = must(await service.listPublished('things'));
+      const second = must(await service.listPublished('things', { cursor: first.nextCursor }));
+      assert.equal(second.items.length, 3);
+      assert.equal(second.nextCursor, null);
+    });
+
+    test('a record added or removed between pages does not shift the next page', async () => {
+      const service = await seeded(6);
+      const first = must(await service.listPublished('things'));
+      must(await service.remove('things', first.items[0].id, STAFF));
+      const added = must(await service.create('things', { title: 'New at the top' }, STAFF, true));
+      must(await service.move('things', added.id, 'first'));
+      const second = must(await service.listPublished('things', { cursor: first.nextCursor }));
+      assert.deepEqual(titles(second.items), ['Thing 4', 'Thing 5', 'Thing 6']);
+    });
+
+    test('the limit is capped, and a bad cursor is refused', async () => {
+      const service = await seeded(8);
+      assert.equal(must(await service.listPublished('things', { limit: '9999' })).items.length, 8);
+      assert.equal(must(await service.listPublished('things', { limit: '2' })).items.length, 2);
+      assert.equal(must(await service.listPublished('things', { limit: 'lots' })).items.length, 3);
+      const bad = await service.listPublished('things', { cursor: 'garbage!' });
+      assert.equal(!bad.ok && bad.error.code, 'bad_request');
+    });
+
+    test('an unknown collection or record is not found', async () => {
+      const service = setup();
+      for (const result of [
+        await service.listPublished('nope'),
+        await service.listForStaff('nope'),
+        await service.create('nope', { title: 'x' }, STAFF),
+        await service.get('things', 'missing'),
+        await service.get('things', "x' OR 1=1 --"),
+        await service.update('things', 'missing', { title: 'x' }, STAFF),
+        await service.remove('things', 'missing', STAFF),
+      ]) {
+        assert.equal(!result.ok && result.error.code, 'not_found');
+      }
+    });
+
+    test('an invalid record is not saved, and the messages come back per field', async () => {
+      const service = setup();
+      const result = await service.create('things', { title: '', year: 5 }, STAFF);
+      assert.deepEqual(!result.ok && result.error, {
+        code: 'invalid',
+        message: 'Please fix the marked fields.',
+        fields: { title: 'Title is needed.', year: 'Year must be from 1900 to 2100.' },
+      });
+      assert.equal(must(await service.listForStaff('things')).total, 0);
+    });
+
+    test('the collection refuses records past its cap; removed ones do not count', async () => {
+      const service = await seeded(8);
+      const over = await service.create('things', { title: 'Nine' }, STAFF);
+      assert.equal(!over.ok && over.error.code, 'full');
+      assert.match(!over.ok ? over.error.message : '', /already has 8 entries/);
+      const page = must(await service.listForStaff('things', { limit: 50 }));
+      assert.equal(page.total, 8);
+      assert.equal(page.maxRecords, 8);
+      must(await service.remove('things', page.items[0].id, STAFF));
+      must(await service.create('things', { title: 'Nine' }, STAFF));
+      // Restoring the removed one would make nine.
+      const back = await service.restore('things', page.items[0].id, STAFF);
+      assert.equal(!back.ok && back.error.code, 'full');
+    });
+
+    test('an edit replaces the fields and records who made it', async () => {
+      const service = setup();
+      const made = must(await service.create('things', { title: 'Before', note: 'n' }, STAFF, true));
+      const edited = must(await service.update('things', made.id, { title: 'After' }, 'other@example.com', made.updatedAt));
+      assert.deepEqual(edited.data, { title: 'After', featured: false });
+      assert.equal(edited.updatedBy, 'other@example.com');
+      assert.equal(edited.status, 'published');
+      assert.ok(edited.updatedAt > made.updatedAt);
+      assert.deepEqual(must(await service.get('things', made.id)), edited);
+    });
+
+    test('an edit based on a stale copy is refused and changes nothing', async () => {
+      const service = setup();
+      const made = must(await service.create('things', { title: 'One' }, STAFF));
+      must(await service.update('things', made.id, { title: 'Two' }, STAFF, made.updatedAt));
+      const stale = await service.update('things', made.id, { title: 'Three' }, STAFF, made.updatedAt);
+      assert.equal(!stale.ok && stale.error.code, 'conflict');
+      assert.equal(must(await service.get('things', made.id)).data.title, 'Two');
+      assert.equal(must(await service.history('things', made.id)).length, 2);
+    });
+
+    test('publish and unpublish move a record on and off the public list', async () => {
+      const service = setup();
+      const made = must(await service.create('things', { title: 'One' }, STAFF));
+      assert.equal(must(await service.setPublished('things', made.id, true, STAFF)).status, 'published');
+      assert.equal(must(await service.listPublished('things')).items.length, 1);
+      assert.equal(must(await service.setPublished('things', made.id, false, STAFF)).status, 'draft');
+      assert.equal(must(await service.listPublished('things')).items.length, 0);
+    });
+
+    test('a removed record leaves both lists and can be restored as it was', async () => {
+      const service = setup();
+      const made = must(await service.create('things', { title: 'One' }, STAFF, true));
+      const removed = must(await service.remove('things', made.id, STAFF));
+      assert.ok(removed.deletedAt);
+      assert.equal(must(await service.listPublished('things')).items.length, 0);
+      assert.equal(must(await service.listForStaff('things')).items.length, 0);
+      assert.deepEqual(titles(must(await service.listForStaff('things', { show: 'removed' })).items), ['One']);
+      const edit = await service.update('things', made.id, { title: 'x' }, STAFF);
+      assert.equal(!edit.ok && edit.error.code, 'not_found');
+      const back = must(await service.restore('things', made.id, STAFF));
+      assert.equal(back.deletedAt, null);
+      assert.equal(back.status, 'published');
+      assert.deepEqual(titles(must(await service.listPublished('things')).items), ['One']);
+    });
+
+    test('records removed more than 90 days ago are dropped for good, with their history', async () => {
+      const store = makeStore();
+      let today = new Date('2026-01-01T00:00:00Z');
+      let id = 0;
+      const service = createCollections({ definitions: [everything], store, now: () => today, newId: () => `r${++id}` });
+      const old = must(await service.create('things', { title: 'Old' }, STAFF));
+      must(await service.remove('things', old.id, STAFF));
+      today = new Date('2026-03-31T00:00:00Z'); // 89 days on
+      const recent = must(await service.create('things', { title: 'Recent' }, STAFF));
+      must(await service.remove('things', recent.id, STAFF));
+      assert.equal(must(await service.listForStaff('things', { show: 'removed' })).items.length, 2);
+      today = new Date(today.getTime() + (LIMITS.removedDays - 88) * 86_400_000);
+      must(await service.create('things', { title: 'Trigger' }, STAFF));
+      assert.deepEqual(titles(must(await service.listForStaff('things', { show: 'removed' })).items), ['Recent']);
+      assert.deepEqual(await store.history('things', old.id, 10), []);
+    });
+
+    test('move up, down, first and last reorder the list; the ends stay put', async () => {
+      const service = await seeded(4);
+      const order = async () => titles(must(await service.listPublished('things', { limit: 50 })).items);
+      const ids = must(await service.listForStaff('things', { limit: 50 })).items.map((r) => r.id);
+      must(await service.move('things', ids[2], 'up'));
+      assert.deepEqual(await order(), ['Thing 1', 'Thing 3', 'Thing 2', 'Thing 4']);
+      must(await service.move('things', ids[2], 'down'));
+      assert.deepEqual(await order(), ['Thing 1', 'Thing 2', 'Thing 3', 'Thing 4']);
+      must(await service.move('things', ids[0], 'up'));
+      must(await service.move('things', ids[3], 'down'));
+      assert.deepEqual(await order(), ['Thing 1', 'Thing 2', 'Thing 3', 'Thing 4']);
+      must(await service.move('things', ids[3], 'first'));
+      must(await service.move('things', ids[0], 'last'));
+      assert.deepEqual(await order(), ['Thing 4', 'Thing 2', 'Thing 3', 'Thing 1']);
+    });
+
+    test('moving skips over removed records, and drafts keep their place', async () => {
+      const service = await seeded(3);
+      const ids = must(await service.listForStaff('things')).items.map((r) => r.id);
+      must(await service.remove('things', ids[1], STAFF));
+      must(await service.move('things', ids[2], 'up'));
+      assert.deepEqual(titles(must(await service.listPublished('things')).items), ['Thing 3', 'Thing 1']);
+    });
+
+    test('a collection can put new records first', async () => {
+      const service = serviceOn(makeStore(), [{ ...everything, newRecords: 'first' }]);
+      for (const title of ['A', 'B', 'C']) must(await service.create('things', { title }, STAFF, true));
+      assert.deepEqual(titles(must(await service.listPublished('things')).items), ['C', 'B', 'A']);
+    });
+
+    test('a collection sorted by a field pages in that order and cannot be rearranged', async () => {
+      const service = setup();
+      const years = [1999, 2010, 1999, 2021, 1975];
+      for (const [i, year] of years.entries()) must(await service.create('by-year', { title: `T${i}`, year }, STAFF, true));
+      const seen: unknown[] = [];
+      let cursor: string | null = null;
+      do {
+        const page: Page<PublicRecord> = must(await service.listPublished('by-year', { cursor, limit: 2 }));
+        seen.push(...page.items.map((r) => `${r.data.year} ${r.id}`));
+        cursor = page.nextCursor;
+      } while (cursor);
+      // Newest first; the two from 1999 in id order, descending.
+      assert.deepEqual(seen, ['2021 r4', '2010 r2', '1999 r3', '1999 r1', '1975 r5']);
+      const moved = await service.move('by-year', 'r1', 'up');
+      assert.equal(!moved.ok && moved.error.code, 'bad_request');
+    });
+
+    test('staff search matches words in any text field, whatever the case, and treats % and _ as text', async () => {
+      const service = setup();
+      must(await service.create('things', { title: 'Blue Lines', note: 'Bristol, 1991' }, STAFF));
+      must(await service.create('things', { title: 'Dummy', note: '100% trip hop', kind: 'b' }, STAFF));
+      must(await service.create('things', { title: 'Under_score' }, STAFF));
+      const find = async (search: string) => titles(must(await service.listForStaff('things', { search })).items);
+      assert.deepEqual(await find('BRISTOL'), ['Blue Lines']);
+      assert.deepEqual(await find('  blue   lines '), ['Blue Lines']);
+      assert.deepEqual(await find('beta'), ['Dummy']);
+      assert.deepEqual(await find('100%'), ['Dummy']);
+      assert.deepEqual(await find('%'), ['Dummy']);
+      assert.deepEqual(await find('_'), ['Under_score']);
+      assert.deepEqual(await find('nothing like this'), []);
+      // The public list has no search to abuse.
+      assert.equal(must(await service.listForStaff('things', { search: '' })).items.length, 3);
+    });
+
+    test('history lists every change, newest first, and a past version can be brought back', async () => {
+      const service = setup();
+      const made = must(await service.create('things', { title: 'One' }, STAFF));
+      const two = must(await service.update('things', made.id, { title: 'Two' }, STAFF));
+      must(await service.setPublished('things', made.id, true, STAFF));
+      const history = must(await service.history('things', made.id));
+      assert.deepEqual(history.map((h) => [h.action, h.data.title, h.status]), [
+        ['publish', 'Two', 'published'],
+        ['update', 'Two', 'draft'],
+        ['create', 'One', 'draft'],
+      ]);
+      assert.equal(history[1].at, two.updatedAt);
+      const first = history[2];
+      const back = must(await service.revert('things', made.id, first.id, STAFF));
+      assert.equal(back.data.title, 'One');
+      // Bringing back old words doesn't unpublish the record.
+      assert.equal(back.status, 'published');
+      assert.equal(must(await service.history('things', made.id))[0].action, 'revert');
+      const missing = await service.revert('things', made.id, 99_999, STAFF);
+      assert.equal(!missing.ok && missing.error.code, 'not_found');
+    });
+
+    test("a past version of another record can't be used", async () => {
+      const service = setup();
+      const a = must(await service.create('things', { title: 'A' }, STAFF));
+      const b = must(await service.create('things', { title: 'B' }, STAFF));
+      const [entryOfA] = must(await service.history('things', a.id));
+      const result = await service.revert('things', b.id, entryOfA.id, STAFF);
+      assert.equal(!result.ok && result.error.code, 'not_found');
+    });
+
+    test('only the newest 50 versions of a record are kept', async () => {
+      const service = setup();
+      const made = must(await service.create('things', { title: 'v0' }, STAFF));
+      for (let i = 1; i <= LIMITS.history + 5; i++) must(await service.update('things', made.id, { title: `v${i}` }, STAFF));
+      const history = must(await service.history('things', made.id));
+      assert.equal(history.length, LIMITS.history);
+      assert.equal(history[0].data.title, `v${LIMITS.history + 5}`);
+    });
+
+    test('collections do not see each other’s records', async () => {
+      const service = setup();
+      const thing = must(await service.create('things', { title: 'Thing' }, STAFF, true));
+      must(await service.create('by-year', { title: 'Entry', year: 2000 }, STAFF, true));
+      assert.equal(must(await service.listPublished('things')).items.length, 1);
+      assert.equal(must(await service.listPublished('by-year')).items.length, 1);
+      const cross = await service.get('by-year', thing.id);
+      assert.equal(!cross.ok && cross.error.code, 'not_found');
+    });
+  });
+}
+
+test('a service refuses to start with a bad or repeated definition', () => {
+  const store = createMemoryStore();
+  assert.throws(() => createCollections({ definitions: [{ ...everything, titleField: 'nope' }], store }), /titleField/);
+  assert.throws(() => createCollections({ definitions: [everything, everything], store }), /declared twice/);
+  assert.equal(createCollections({ definitions: [byYear], store }).definition('by-year'), byYear);
+});

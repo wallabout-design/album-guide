@@ -1,11 +1,12 @@
 {
-  // The Worker's tests run in Node (npm run test:worker), so they get Node's
-  // types on top of the Worker's. The Worker itself stays Workers-only.
+  // The Worker's tests and the unit tests of src/lib run in Node (npm run
+  // test:worker, test:lib), so they get Node's types on top of the Worker's.
+  // The Worker itself stays Workers-only.
   "extends": "./tsconfig.worker.json",
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.worker-tests.tsbuildinfo",
     "types": ["@cloudflare/workers-types", "node"]
   },
-  "include": ["worker"],
+  "include": ["worker", "src/lib/**/tests"],
   "exclude": []
 }
