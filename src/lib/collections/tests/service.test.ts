@@ -192,6 +192,39 @@ for (const [name, makeStore] of Object.entries(stores)) {
       assert.deepEqual(await store.history('things', old.id, 10), []);
     });
 
+    test('a record removed over 90 days ago is gone at once, and its rows go with the next change of any kind', async () => {
+      const store = makeStore();
+      let today = new Date('2026-01-01T00:00:00Z');
+      let id = 0;
+      const service = createCollections({ definitions: [everything], store, now: () => today, newId: () => `r${++id}` });
+      const days = (n: number) => new Date(new Date('2026-01-01T00:00:01Z').getTime() + n * 86_400_000);
+      const old = must(await service.create('things', { title: 'Old' }, STAFF));
+      const kept = must(await service.create('things', { title: 'Kept' }, STAFF));
+      today = new Date('2026-01-01T00:00:01Z');
+      must(await service.remove('things', old.id, STAFF));
+      must(await service.remove('things', kept.id, STAFF));
+      const other = must(await service.create('things', { title: 'Other' }, STAFF));
+
+      // 89 days on: still listed, and it can be brought back.
+      today = days(89);
+      assert.deepEqual(titles(must(await service.listForStaff('things', { show: 'removed' })).items), ['Old', 'Kept']);
+      must(await service.restore('things', kept.id, STAFF));
+
+      // 91 days on, with nothing added: not listed, not found, not restorable.
+      today = days(91);
+      assert.deepEqual(must(await service.listForStaff('things', { show: 'removed' })).items, []);
+      for (const result of [await service.get('things', old.id), await service.history('things', old.id), await service.restore('things', old.id, STAFF)]) {
+        assert.equal(!result.ok && result.error.code, 'not_found');
+      }
+      assert.ok(await store.get('things', old.id));
+
+      // Any other write, here an edit, deletes its rows and history.
+      must(await service.update('things', other.id, { title: 'Other, edited' }, STAFF, other.updatedAt));
+      assert.equal(await store.get('things', old.id), null);
+      assert.deepEqual(await store.history('things', old.id, 10), []);
+      assert.ok(await store.get('things', kept.id));
+    });
+
     test('move up, down, first and last reorder the list; the ends stay put', async () => {
       const service = await seeded(4);
       const order = async () => titles(must(await service.listPublished('things', { limit: 50 })).items);
