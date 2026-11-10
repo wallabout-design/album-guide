@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
+import { LIMITS } from '../types';
 
 const ROOT = join(import.meta.dirname, '../../../..');
 const MIGRATION = readFileSync(join(ROOT, 'migrations/0001_collections.sql'), 'utf8');
@@ -50,4 +51,14 @@ test('the seed touches no collection but picks', () => {
   `);
   db.exec(SEED);
   assert.deepEqual(ids(db, 'other'), ['kept']);
+});
+
+test('the seeded removed pick is removed recently enough to still be listed', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec(MIGRATION);
+  db.exec(SEED);
+  const row = db.prepare("SELECT deleted_at FROM records WHERE collection = 'picks' AND id = 'seed-11'").get();
+  const deletedAt = String(row?.deleted_at);
+  assert.equal(new Date(deletedAt).toISOString(), deletedAt);
+  assert.ok(Date.now() - Date.parse(deletedAt) < LIMITS.removedDays * 86_400_000);
 });
