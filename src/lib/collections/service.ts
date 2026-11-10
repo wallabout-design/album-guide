@@ -211,9 +211,10 @@ export function createCollections(options: CollectionsOptions) {
 
     /**
      * Replaces a record's fields. `ifUpdatedAt` is the `updatedAt` the editor
-     * loaded; if the record has changed since, nothing is saved.
+     * loaded, and is required: if the record has changed since, nothing is
+     * saved, so one editor never silently overwrites another.
      */
-    async update(name: string, id: string, input: unknown, by: string, ifUpdatedAt?: string): Promise<Result<StoredRecord>> {
+    async update(name: string, id: string, input: unknown, by: string, ifUpdatedAt: string): Promise<Result<StoredRecord>> {
       const found = await load(name, id);
       if (!found.ok) return found;
       const { def, record } = found.value;
