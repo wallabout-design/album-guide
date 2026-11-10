@@ -21,8 +21,16 @@ export interface AdminEnv {
   ADMIN_TEST_CODE?: string;
 }
 
-/** The hosts production answers on. The test sign-in never works here, whatever is configured. */
-const PRODUCTION_HOSTS = ['album.guide', 'www.album.guide'];
+/**
+ * The hosts production answers on. The test sign-in never works here, whatever
+ * is configured, and every other host is told not to be indexed (worker/index.ts).
+ */
+export const PRODUCTION_HOSTS = ['album.guide', 'www.album.guide'];
+
+/** True for album.guide and www.album.guide; false for previews and local runs. */
+export function isProductionHost(hostname: string): boolean {
+  return PRODUCTION_HOSTS.includes(hostname);
+}
 
 /** Who a test sign-in is, in "last changed by". */
 export const TEST_EMAIL = 'preview-staff@example.com';
@@ -47,7 +55,7 @@ const emailList = (text: string | undefined) =>
 
 /** True when the fixed test code may be used on this request's host. */
 export function testLoginAllowed(request: Request, env: AdminEnv): boolean {
-  return Boolean(env.ADMIN_TEST_CODE) && !PRODUCTION_HOSTS.includes(new URL(request.url).hostname);
+  return Boolean(env.ADMIN_TEST_CODE) && !isProductionHost(new URL(request.url).hostname);
 }
 
 /** What the test cookie holds: derived from the code, so changing the code signs everyone out. */
