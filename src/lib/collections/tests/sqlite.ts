@@ -8,7 +8,8 @@ import type { SqlDatabase, SqlStatement } from '../sql-store';
 const MIGRATION = join(import.meta.dirname, '../../../../migrations/0001_collections.sql');
 
 export function createTestDatabase(): SqlDatabase {
-  const db = new DatabaseSync(':memory:');
+  // D1 refuses a LIKE or GLOB pattern over 50 bytes; Node's default is 50,000.
+  const db = new DatabaseSync(':memory:', { limits: { likePatternLength: 50 } });
   db.exec(readFileSync(MIGRATION, 'utf8'));
 
   const statement = (sql: string, values: SQLInputValue[]): SqlStatement => ({

@@ -256,6 +256,22 @@ for (const [name, makeStore] of Object.entries(stores)) {
       assert.equal(must(await service.listForStaff('things', { search: '' })).items.length, 3);
     });
 
+    test('a staff search of the full length, or with %, _ and accents, finds its record', async () => {
+      const service = setup();
+      const long = `${'a long pasted sentence about one record, '.repeat(3)}and more`.slice(0, LIMITS.search);
+      const odd = '100% café_crème, déjà vu';
+      must(await service.create('by-year', { title: long, year: 2001 }, STAFF));
+      must(await service.create('by-year', { title: odd, year: 2002 }, STAFF));
+      must(await service.create('by-year', { title: 'Something else', year: 2003 }, STAFF));
+      const find = async (search: string) => titles(must(await service.listForStaff('by-year', { search })).items);
+      assert.equal(long.length, LIMITS.search);
+      assert.deepEqual(await find(long.toUpperCase()), [long]);
+      assert.deepEqual(await find(`${long}x`), [long]);
+      assert.deepEqual(await find(odd), [odd]);
+      assert.deepEqual(await find('% CAFÉ_CRÈME, DÉJÀ'), [odd]);
+      assert.deepEqual(await find('b'.repeat(LIMITS.search)), []);
+    });
+
     test('history lists every change, newest first, and a past version can be brought back', async () => {
       const service = setup();
       const made = must(await service.create('things', { title: 'One' }, STAFF));
