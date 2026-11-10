@@ -303,7 +303,7 @@ for (const [name, makeStore] of Object.entries(stores)) {
       const store = makeStore();
       const service = serviceOn(store);
       const made = must(await service.create('things', { title: 'A longer old title' }, STAFF));
-      must(await service.update('things', made.id, { title: 'Short' }, STAFF));
+      must(await service.update('things', made.id, { title: 'Short' }, STAFF, made.updatedAt));
       const [, first] = must(await service.history('things', made.id));
       // The form changes: titles may now be at most 10 characters.
       const rest = everything.fields.slice(1);
