@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Type check, build, HTML validation, lint, and the repo's own offline checks.
+  # Type check, lint, build, HTML validation and the unit layer.
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -23,25 +23,21 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      # tsc -b: the app, the worker (tsconfig.worker.json) and the tests.
-      - run: npm run typecheck
+      # The steps of `npm run verify` (standards/testing.md in
+      # wallabout-design/standards), without the browser tests, which the e2e
+      # job runs.
+      # Types (tsc -b: the app, the worker and the tests) and oxlint.
+      - run: npm run check
       # Built as production builds it, against the production API.
       - run: npm run build:production
-      # The Worker config and code, as Workers Builds deploys them (bundles
-      # worker/ and reads dist/ without uploading anything).
-      - run: npx wrangler deploy --dry-run --outdir .wrangler/dry-run
-      # The preview Worker's config too (docs/decisions/0015-preview-worker.md).
-      - run: npx wrangler deploy --dry-run --env preview --outdir .wrangler/dry-run-preview
+      # The Worker configs and code, production and preview, as Workers Builds
+      # deploys them (bundles worker/ and reads dist/ without uploading anything).
+      - run: npm run check:deploy
       - run: npm run lint:html
-      - run: npm run lint
-      - run: npm run check
-      - run: npm run click-check
-      - run: npm run feedback-check
       - run: npm run dist-check
-      - run: npm run eval
-      - run: npm run test:worker
-      # Plain-TypeScript logic under src/lib (collections).
-      - run: npm run test:lib
+      # The unit layer: the render, click and feedback checks, the recommender
+      # eval, and the Worker and src/lib unit tests. No server, no browser.
+      - run: npm run test:unit
 
   # Every view in Chromium and WebKit against the production build, with the
   # API and cover art mocked (e2e/network.ts); see playwright.config.ts.

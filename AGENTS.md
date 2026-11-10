@@ -17,12 +17,16 @@ Clone: `git clone https://github.com/wallabout-design/album-guide.git` (moved fr
 
 ## commands
 
-Node 24 (`.nvmrc`, which CI and Workers Builds read). Run these before opening a PR. CI (`.github/workflows/ci.yml`) runs them on every PR: `check` and `e2e` are required, `screenshots` is not.
+Node 24 (`.nvmrc`, which CI and Workers Builds read). **Run `npm run verify` before opening a PR**: it is everything CI requires, in one command. CI (`.github/workflows/ci.yml`) runs the same scripts on every PR: `check` and `e2e` are required, `screenshots` is not. The script names and the rules for tests are in `standards/testing.md` in `wallabout-design/standards`.
 
-- `npx tsc -b`: type check
-- `npm run lint`: oxlint
+- `npm run verify`: `check`, `build:production`, `check:deploy`, `lint:html`, `dist-check`, then `npm test`
+- `npm run check`: static checks: `npm run typecheck` (`tsc -b`) and `npm run lint` (oxlint)
+- `npm run test:unit`: the unit layer, no server and no browser: `render-check`, `click-check`, `feedback-check`, `eval`, `test:worker` and `test:lib`, each described below. The quick loop while working
+- `npm test`: `test:unit`, then `test:e2e`
+- `npm run check:deploy`: `wrangler deploy --dry-run` for the production and preview Workers (bundles `worker/`, uploads nothing; after a build)
+- Flaky tests: `gh workflow run burn-in.yml -f runs=10` runs every suite ten times with retries off. A flake gets an issue labelled `flaky` and a fix at its cause, never a retry or a sleep
 - `npm run build`: type check and build to `dist/` (bundled catalog only), the app first and then the small pages (`vite.pages.config.ts`). `npm run build:production` adds the Fly API address, as Workers Builds does
-- `npm run check`: server-render the app and assert its structure. Also `npm run click-check`, `npm run feedback-check`, `npm run dist-check` (after a build); none needs the network. `npm run api-wire-check` needs a local API, so CI skips it
+- `npm run render-check` (was `npm run check` until 2026-11-10): server-render the app and assert its structure. Also `npm run click-check`, `npm run feedback-check`, `npm run dist-check` (after a build); none needs the network. `npm run api-wire-check` needs a local API, so CI skips it
 - `npm run test:worker`: the Worker's unit tests (`worker/tests/`)
 - `npm run test:lib`: unit tests of the plain-TypeScript logic under `src/lib/` (collections: validation, pagination, the service against a fake store and against real SQLite with the migration)
 - `npm run lint:html`: html-validate on `dist/` (after a build)
