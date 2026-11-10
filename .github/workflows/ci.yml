@@ -40,6 +40,8 @@ jobs:
       - run: npm run dist-check
       - run: npm run eval
       - run: npm run test:worker
+      # Plain-TypeScript logic under src/lib (collections).
+      - run: npm run test:lib
 
   # Every view in Chromium and WebKit against the production build, with the
   # API and cover art mocked (e2e/network.ts); see playwright.config.ts.
