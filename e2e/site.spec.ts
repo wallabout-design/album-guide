@@ -75,6 +75,16 @@ test('falls back to the bundled catalog when the API is down', async ({ page, ba
   expect(seen.unexpected).toEqual([]);
 });
 
+// The test server is a preview Worker on 127.0.0.1, so every response says noindex
+// (worker/index.ts); worker/tests/routing.test.ts checks album.guide does not.
+test('preview pages tell search engines not to index them', async ({ request }) => {
+  for (const path of ['/', '/picks']) {
+    const res = await request.get(path);
+    expect(res.status(), path).toBe(200);
+    expect(res.headers()['x-robots-tag'], path).toBe('noindex');
+  }
+});
+
 test('robots.txt and sitemap.xml are served', async ({ request }) => {
   const robots = await request.get('/robots.txt');
   expect(robots.status()).toBe(200);

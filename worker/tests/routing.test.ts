@@ -54,6 +54,27 @@ test('preview hosts are served, not redirected', async () => {
   assert.equal(seen.length, 1);
 });
 
+test('preview and local hosts tell search engines not to index anything', async () => {
+  const { env } = envWithAssets();
+  for (const url of [
+    'https://feat-x-album-guide-site-preview.jj-23b.workers.dev/',
+    'https://feat-x-album-guide-site-preview.jj-23b.workers.dev/picks',
+    'https://feat-x-album-guide-site-preview.jj-23b.workers.dev/api/nope',
+    'http://127.0.0.1:8787/',
+  ]) {
+    const res = await worker.fetch(new Request(url), env);
+    assert.equal(res.headers.get('x-robots-tag'), 'noindex', url);
+  }
+});
+
+test('album.guide and its www redirect carry no X-Robots-Tag', async () => {
+  const { env } = envWithAssets();
+  for (const url of ['https://album.guide/', 'https://album.guide/picks', 'https://album.guide/api/nope', 'https://www.album.guide/']) {
+    const res = await worker.fetch(new Request(url), env);
+    assert.equal(res.headers.get('x-robots-tag'), null, url);
+  }
+});
+
 test('an unknown /api/* path is a JSON 404, not an asset', async () => {
   const { env, seen } = envWithAssets();
   const res = await worker.fetch(new Request('https://album.guide/api/nope'), env);
