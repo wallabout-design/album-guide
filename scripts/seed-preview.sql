@@ -1,9 +1,16 @@
 -- Fake staff picks for the preview database and the e2e tests, so the public
 -- list has more than one page: 26 real albums from the bundled catalog with
 -- made-up notes. 23 are published, seed-07 and seed-19 are drafts, and seed-11
--- was removed. Safe to run again: it puts these rows back as they are here.
--- seed-11 is removed "now", as a removal over 90 days old no longer counts.
--- e2e/collections.spec.ts counts on those numbers.
+-- was removed. e2e/collections.spec.ts counts on those numbers. seed-11 is
+-- removed "now": a removal over 90 days old no longer counts.
+--
+-- Every run resets the picks to exactly these rows: it first deletes every
+-- picks record and all history, so whatever anyone wrote through a preview's
+-- admin (its sign-in code is public) is gone after the next upload. Only ever
+-- run against the preview and e2e databases (worker/tests/config.test.ts checks
+-- ship:production never uses this file).
+DELETE FROM record_history;
+DELETE FROM records WHERE collection = 'picks';
 INSERT OR REPLACE INTO records (collection, id, data, search, status, position, created_at, updated_at, updated_by, deleted_at) VALUES
   ('picks', 'seed-01', '{"album": "9d532998-3e5c-4e2c-a3d5-ee41ce7250ff", "title": "Malleable Monsters", "artist": "Kid Indigo", "year": 2015, "note": "Preview data, not a real pick. Entry 1 of the seeded list.", "featured": true}', '9d532998-3e5c-4e2c-a3d5-ee41ce7250ff malleable monsters kid indigo preview data, not a real pick. entry 1 of the seeded list.', 'published', 1, '2026-11-01T00:00:00.000Z', '2026-11-01T00:00:00.000Z', 'seed@example.com', NULL),
   ('picks', 'seed-02', '{"album": "9162580e-5df4-32de-80cc-f45a8d8a9b1d", "title": "Abbey Road", "artist": "The Beatles", "year": 1969, "note": "Preview data, not a real pick. Entry 2 of the seeded list.", "featured": false, "kind": "deep"}', '9162580e-5df4-32de-80cc-f45a8d8a9b1d abbey road the beatles preview data, not a real pick. entry 2 of the seeded list.', 'published', 2, '2026-11-01T00:00:00.000Z', '2026-11-01T00:00:00.000Z', 'seed@example.com', NULL),

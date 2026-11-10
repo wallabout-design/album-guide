@@ -67,6 +67,45 @@ test('control characters are dropped, and odd line breaks become spaces in one-l
   assert.deepEqual(long.ok && long.data.note, 'abc d');
 });
 
+test('a required text of only invisible characters is needed', () => {
+  for (const blank of ['\u200B', '\u200B\u2060\u00AD', ' \u200D\u200C ', '\u202E', '\u0301\u0301', '\u3000\u200B']) {
+    assert.deepEqual(errorsFor({ title: blank }), { title: 'Title is needed.' }, JSON.stringify(blank));
+  }
+  // An optional field of only invisible characters is left out, as if blank.
+  assert.deepEqual(validateRecord(everything, { title: 'ok', note: '\u200B\n\u200D' }), {
+    ok: true,
+    data: { title: 'ok', featured: false },
+  });
+});
+
+test('invisible and direction-changing characters are removed quietly from text and long text', () => {
+  const reversed = 'Abbey Road \u202Etxet desrever';
+  const result = validateRecord(everything, {
+    title: 'A\u200Bb \u2066c\u2069 \u200Ed',
+    note: `${reversed}\n\u00ADsoft\u2060 \u180Ex\u202A\u202B\u202C\u202D\u2067\u2068\u200F`,
+  });
+  assert.deepEqual(result.ok && result.data.title, 'Ab c d');
+  assert.deepEqual(result.ok && result.data.note, 'Abbey Road txet desrever\nsoft x');
+  // The words searched are the words stored.
+  assert.equal(searchText(everything, { note: result.ok ? String(result.data.note) : '' }).includes('txet desrever'), true);
+});
+
+test('joiners that emoji and Persian need survive unchanged', () => {
+  const family = '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}';
+  const persian = '\u0645\u06CC\u200C\u062E\u0648\u0627\u0647\u0645';
+  const keycap = '1\uFE0F\u20E3';
+  const result = validateRecord(everything, { title: family, note: `${persian} ${keycap}` });
+  assert.deepEqual(result, { ok: true, data: { title: family, note: `${persian} ${keycap}`, featured: false } });
+});
+
+test('a long run of combining marks on one letter is refused; a few are fine', () => {
+  // NFC folds a mark into the letter where it can (é), so U+0335, which joins nothing, counts exactly.
+  assert.equal(validateRecord(everything, { title: 'e\u0301\u0302\u0303\u0304' }).ok, true);
+  assert.equal(validateRecord(everything, { title: `x${'\u0335'.repeat(4)}` }).ok, true);
+  assert.match(errorsFor({ title: `e${'\u0301'.repeat(150)}` }).title, /too many accents on one letter/);
+  assert.match(errorsFor({ title: 'ok', note: `x${'\u0335'.repeat(5)}` }).note, /too many accents on one letter/);
+});
+
 test('a web address must be https, complete, and without a password', () => {
   for (const bad of ['http://example.com', 'javascript:alert(1)', 'data:text/html,x', 'example.com', '//example.com', 'ftp://example.com', 'https://a b.com']) {
     assert.ok(errorsFor({ title: 'ok', link: bad }).link, bad);
@@ -110,6 +149,17 @@ test('a tick box, a choice, an image and a reference each take only their own va
   }
   assert.equal(errorsFor({ title: 'ok', ref: 'XYZ' }).ref, "Reference doesn't look right. It should look like 0123abcd.");
   assert.equal(errorsFor({ title: 'ok', ref: '0123abcd\nextra' }).ref, "Reference doesn't look right. It should look like 0123abcd.");
+});
+
+test('a reference longer than the limit is refused even when its pattern matches', () => {
+  const def: CollectionDefinition = {
+    ...everything,
+    fields: [everything.fields[0], { name: 'ref', label: 'Reference', type: 'reference', pattern: '[a-z]+', example: 'abc' }],
+  };
+  checkDefinition(def);
+  assert.equal(validateRecord(def, { title: 'ok', ref: 'a'.repeat(LIMITS.reference) }).ok, true);
+  const result = validateRecord(def, { title: 'ok', ref: 'a'.repeat(LIMITS.reference + 1) });
+  assert.deepEqual(result, { ok: false, errors: { ref: "Reference doesn't look right. It should look like abc." } });
 });
 
 test('a field the collection does not declare is refused, not saved', () => {

@@ -136,11 +136,13 @@ export function createSqlStore(db: SqlDatabase): CollectionStore {
 
     async insert(record, search, place, maxRecords, entry) {
       // The position and the cap are worked out in the statement itself, so
-      // two people adding at once can't both take the last free place.
+      // two people adding at once can't both take the last free place. The
+      // position is past every record, removed ones too, so a removed record
+      // that is restored never shares its position with a new one.
       const position =
         place === 'first'
-          ? 'COALESCE((SELECT MIN(position) FROM records WHERE collection = ? AND deleted_at IS NULL), 2) - 1'
-          : 'COALESCE((SELECT MAX(position) FROM records WHERE collection = ? AND deleted_at IS NULL), 0) + 1';
+          ? 'COALESCE((SELECT MIN(position) FROM records WHERE collection = ?), 2) - 1'
+          : 'COALESCE((SELECT MAX(position) FROM records WHERE collection = ?), 0) + 1';
       const [inserted] = await db.batch([
         db
           .prepare(

@@ -43,3 +43,15 @@ test('only the preview Worker has the test sign-in code', () => {
     assert.equal(preview?.vars?.[name], undefined, name);
   }
 });
+
+test('the preview seed, which deletes every pick first, is never run by a production script', async () => {
+  const { scripts } = (await import('../../package.json', { with: { type: 'json' } })).default as {
+    scripts: Record<string, string>;
+  };
+  assert.match(scripts['db:preview'], /--file scripts\/seed-preview\.sql/);
+  assert.match(scripts['db:preview'], /album-guide-preview --remote --env preview/);
+  for (const name of ['ship:production', 'deploy', 'build:production']) {
+    assert.ok(scripts[name], name);
+    assert.doesNotMatch(scripts[name], /seed-preview|db:preview/, name);
+  }
+});

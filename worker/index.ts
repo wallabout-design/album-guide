@@ -5,7 +5,7 @@
 // (anything else under /api/* is a JSON 404), and every other path is served
 // from dist/ by ASSETS, which also answers unknown paths with 404.html.
 import { handleAdmin, isAdminPath } from './admin';
-import type { AdminEnv } from './admin-auth';
+import { isProductionHost, type AdminEnv } from './admin-auth';
 import { publicList, type CollectionsEnv } from './collections';
 import { withSecurityHeaders } from './security-headers';
 import { SENTRY_TUNNEL_PATH, sentryTunnel } from './sentry';
@@ -69,10 +69,14 @@ const routes: Route[] = [
 
 // Every response, the redirect and the API's included, gets the security
 // headers (worker/security-headers.ts); public/_headers sets the same ones on
-// static files.
+// static files. On any host but production (branch previews, local runs) every
+// response also says noindex: a preview's admin takes a public sign-in code,
+// so what it shows must never reach a search engine.
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    return withSecurityHeaders(await handle(request, env));
+    const response = withSecurityHeaders(await handle(request, env));
+    if (!isProductionHost(new URL(request.url).hostname)) response.headers.set('X-Robots-Tag', 'noindex');
+    return response;
   },
 } satisfies ExportedHandler<Env>;
 

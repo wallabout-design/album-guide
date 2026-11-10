@@ -29,7 +29,8 @@ export interface CollectionStore {
   count(collection: string): Promise<number>;
   /**
    * Adds a record at the start or end of the order, with its first history
-   * entry. `record.position` is ignored. False, and nothing written, when the
+   * entry. `record.position` is ignored: the new one is below or above every
+   * record's, removed ones included, so it is never shared. False, and nothing written, when the
    * collection already holds `maxRecords`.
    */
   insert(record: StoredRecord, search: string, place: 'first' | 'last', maxRecords: number, history: NewHistory): Promise<boolean>;

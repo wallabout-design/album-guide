@@ -249,6 +249,53 @@ for (const [name, makeStore] of Object.entries(stores)) {
       assert.deepEqual(titles(must(await service.listPublished('things')).items), ['Thing 3', 'Thing 1']);
     });
 
+    // Fixed ids (m, z, k, a), so the order of records that share a position, by id, is known.
+    function lettered(store: CollectionStore, newRecords: 'first' | 'last' = 'last') {
+      let tick = 0;
+      const ids = ['m', 'z', 'k', 'a'];
+      return createCollections({
+        definitions: [{ ...everything, newRecords }],
+        store,
+        now: () => new Date(Date.UTC(2026, 0, 1, 0, 0, tick++)),
+        newId: () => ids.shift() ?? `x${tick}`,
+      });
+    }
+
+    for (const place of ['last', 'first'] as const) {
+      test(`after remove, add and restore no two records share a position (new records ${place})`, async () => {
+        const store = makeStore();
+        const service = lettered(store, place);
+        const made: string[] = [];
+        for (const title of ['A', 'B', 'C']) made.push(must(await service.create('things', { title }, STAFF, true)).id);
+        // C is the newest, so it sits at the end the next record will take.
+        must(await service.remove('things', made[2], STAFF));
+        must(await service.create('things', { title: 'D' }, STAFF, true));
+        must(await service.restore('things', made[2], STAFF));
+        const records = must(await service.listForStaff('things', { limit: 50 })).items;
+        const positions = records.map((r) => r.position);
+        assert.equal(new Set(positions).size, positions.length, `positions ${positions.join(', ')}`);
+        assert.deepEqual(titles(records), place === 'last' ? ['A', 'B', 'C', 'D'] : ['D', 'C', 'B', 'A']);
+      });
+    }
+
+    test('move up or down goes one place when two records share a position', async () => {
+      const store = makeStore();
+      const service = lettered(store);
+      const ids: string[] = [];
+      for (const title of ['A', 'B', 'C', 'D']) ids.push(must(await service.create('things', { title }, STAFF, true)).id);
+      const [, , c, d] = ids;
+      // C and D at the same position, as data from before positions were kept unique can be: A@1 B@2 D@3 C@3.
+      await store.setPositions('things', [{ id: c, position: 3 }, { id: d, position: 3 }]);
+      const order = async () => titles(must(await service.listPublished('things', { limit: 50 })).items);
+      assert.deepEqual(await order(), ['A', 'B', 'D', 'C']);
+      must(await service.move('things', c, 'up'));
+      assert.deepEqual(await order(), ['A', 'B', 'C', 'D']);
+      must(await service.move('things', c, 'down'));
+      assert.deepEqual(await order(), ['A', 'B', 'D', 'C']);
+      const positions = must(await service.listForStaff('things', { limit: 50 })).items.map((r) => r.position);
+      assert.equal(new Set(positions).size, 4);
+    });
+
     test('a collection can put new records first', async () => {
       const service = serviceOn(makeStore(), [{ ...everything, newRecords: 'first' }]);
       for (const title of ['A', 'B', 'C']) must(await service.create('things', { title }, STAFF, true));
@@ -337,13 +384,34 @@ for (const [name, makeStore] of Object.entries(stores)) {
     });
 
     test('only the newest 50 versions of a record are kept', async () => {
-      const service = setup();
+      const store = makeStore();
+      const service = serviceOn(store);
       const made = must(await service.create('things', { title: 'v0' }, STAFF));
       let version = made.updatedAt;
       for (let i = 1; i <= LIMITS.history + 5; i++) version = must(await service.update('things', made.id, { title: `v${i}` }, STAFF, version)).updatedAt;
       const history = must(await service.history('things', made.id));
       assert.equal(history.length, LIMITS.history);
       assert.equal(history[0].data.title, `v${LIMITS.history + 5}`);
+      // Count in the store itself: history() reads at most 50, so it can't show old rows left behind.
+      assert.equal((await store.history('things', made.id, 1_000)).length, LIMITS.history);
+    });
+
+    test("a past version that no longer fits the form can't be brought back", async () => {
+      const store = makeStore();
+      const service = serviceOn(store);
+      const made = must(await service.create('things', { title: 'A longer old title' }, STAFF));
+      must(await service.update('things', made.id, { title: 'Short' }, STAFF, made.updatedAt));
+      const [, first] = must(await service.history('things', made.id));
+      // The form changes: titles may now be at most 10 characters.
+      const rest = everything.fields.slice(1);
+      const title = { name: 'title', label: 'Title', type: 'text', required: true, maxLength: 10 } as const;
+      const tighter = serviceOn(store, [{ ...everything, fields: [title, ...rest] }]);
+      const result = await tighter.revert('things', made.id, first.id, STAFF);
+      assert.equal(!result.ok && result.error.code, 'invalid');
+      assert.ok(!result.ok && result.error.code === 'invalid' && result.error.fields.title);
+      const now = must(await service.get('things', made.id));
+      assert.equal(now.data.title, 'Short');
+      assert.equal(must(await service.history('things', made.id))[0].action, 'update');
     });
 
     test('collections do not see each other’s records', async () => {
