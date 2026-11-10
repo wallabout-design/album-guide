@@ -1,0 +1,167 @@
+name: burn-in
+
+# Runs every test suite many times with retries off, to find flaky tests
+# (standards/testing.md in wallabout-design/standards, "flake policy").
+# Start it by hand, on main or on a branch:
+#   gh workflow run burn-in.yml -f runs=10
+#   gh workflow run burn-in.yml --ref my-branch -f runs=20 -f repeat_each=3
+# The `report` job's summary counts passes and failures per suite. A red run is
+# a flaky test or a real failure: open an issue labelled `flaky` and fix the
+# cause. Never add a retry or a sleep to make it green.
+# A pull request that changes this file runs it twice, to prove it still works.
+on:
+  pull_request:
+    paths: ['.github/workflows/burn-in.yml']
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: How many times to run each suite (1 to 40)
+        default: '10'
+      repeat_each:
+        description: Playwright --repeat-each, every test this many times inside each run
+        default: '1'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: burn-in-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REPEAT_EACH: ${{ inputs.repeat_each || '1' }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      runs: ${{ steps.runs.outputs.list }}
+    steps:
+      - id: runs
+        env:
+          N: ${{ inputs.runs || '2' }}
+        run: |
+          [[ "$N" =~ ^[0-9]+$ && "$N" -ge 1 && "$N" -le 40 ]] || { echo "runs must be 1 to 40"; exit 1; }
+          [[ "$REPEAT_EACH" =~ ^[0-9]+$ && "$REPEAT_EACH" -ge 1 ]] || { echo "repeat_each must be a number"; exit 1; }
+          echo "list=[$(seq -s, 1 "$N")]" >> "$GITHUB_OUTPUT"
+
+  # The offline checks and the Worker unit tests (as `check` in ci.yml, without
+  # the type check, lint and HTML validation, which cannot flake).
+  check:
+    needs: plan
+    name: check ${{ matrix.run }}
+    strategy:
+      fail-fast: false
+      matrix:
+        run: ${{ fromJSON(needs.plan.outputs.runs) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build:production
+      - run: npm run check
+      - run: npm run click-check
+      - run: npm run feedback-check
+      - run: npm run dist-check
+      - run: npm run eval
+      - run: npm run test:worker
+
+  # Playwright against the production build in workerd (as `e2e` in ci.yml).
+  e2e:
+    needs: plan
+    name: e2e ${{ matrix.run }}
+    strategy:
+      fail-fast: false
+      matrix:
+        run: ${{ fromJSON(needs.plan.outputs.runs) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:e2e -- --retries=0 --repeat-each="$REPEAT_EACH"
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-${{ matrix.run }}-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # The screenshot matrix (as `screenshots` in ci.yml).
+  screenshots:
+    needs: plan
+    name: screenshots ${{ matrix.run }}
+    strategy:
+      fail-fast: false
+      matrix:
+        run: ${{ fromJSON(needs.plan.outputs.runs) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run screenshots -- --retries=0
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshots-${{ matrix.run }}-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # Counts the runs. Fails if any run failed, so the workflow is red when a
+  # suite is flaky.
+  report:
+    needs: [check, e2e, screenshots]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" --paginate \
+            --jq '.jobs[] | select(.name | test("^(plan|report)$") | not) | [(.name | sub(" [0-9]+$"; "")), .name, .conclusion, ((.completed_at | fromdate) - (.started_at | fromdate))] | @tsv' > jobs.tsv
+          {
+            echo "## burn-in: ${GITHUB_SHA::7}, retries off, repeat-each $REPEAT_EACH"
+            echo
+            echo "| suite | runs | passed | failed | median seconds | slowest seconds |"
+            echo "| --- | --- | --- | --- | --- | --- |"
+            cut -f1 jobs.tsv | sort -u | while read -r suite; do
+              awk -F'\t' -v s="$suite" '$1 == s' jobs.tsv > suite.tsv
+              runs=$(wc -l < suite.tsv | tr -d ' ')
+              passed=$(awk -F'\t' '$3 == "success"' suite.tsv | wc -l | tr -d ' ')
+              median=$(cut -f4 suite.tsv | sort -n | awk '{ a[NR] = $1 } END { print a[int((NR + 1) / 2)] }')
+              slowest=$(cut -f4 suite.tsv | sort -n | tail -1)
+              echo "| $suite | $runs | $passed | $((runs - passed)) | $median | $slowest |"
+            done
+            echo
+            if awk -F'\t' '$3 != "success"' jobs.tsv | grep -q .; then
+              echo "Not green:"
+              echo
+              awk -F'\t' '$3 != "success" { print "- " $2 ": " $3 }' jobs.tsv
+            else
+              echo "Every run passed."
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          ! awk -F'\t' '$3 != "success"' jobs.tsv | grep -q .
