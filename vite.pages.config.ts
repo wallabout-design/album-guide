@@ -1,4 +1,4 @@
-// The site's small extra pages: /admin (staff only) and, later, /picks. They
+// The site's small extra pages: /admin (staff only) and /picks. They
 // are built on their own, after the app (vite.config.ts), into the same dist/:
 // a second build keeps the app's bundle one self-contained file, which
 // scripts/dist-check.ts runs as a whole, and keeps these pages from ever
@@ -21,6 +21,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         admin: fileURLToPath(new URL('./admin.html', import.meta.url)),
+        picks: fileURLToPath(new URL('./picks.html', import.meta.url)),
       },
     },
   },

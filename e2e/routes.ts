@@ -24,7 +24,9 @@ export async function settle(page: Page) {
 /*
  * Every view the site has. album.guide is one page with no router (src/App.tsx):
  * "/" is the app, "?feedback" turns on the hidden feedback link, and any other
- * path gets the 404 page (404.html, wrangler.jsonc "404-page"). The About,
+ * path gets the 404 page (404.html, wrangler.jsonc "404-page"), except /picks,
+ * a small page of its own (the admin, which needs a sign-in, is covered by
+ * e2e/admin.spec.ts). The About,
  * search and debug panels open over the app from the page itself, so each is
  * checked as its own view.
  */
@@ -54,6 +56,15 @@ export const views: View[] = [
     status: 404,
     ready: async (page) => {
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    },
+  },
+  {
+    // Staff picks, its own small page (picks.html), filled from the Worker's
+    // /api/collections/picks and the seeded local database.
+    name: 'picks',
+    path: '/picks',
+    ready: async (page) => {
+      await expect(page.locator('.pick')).toHaveCount(12);
     },
   },
   {

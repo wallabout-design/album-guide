@@ -26,7 +26,7 @@ Node 24 (`.nvmrc`, which CI and Workers Builds read). Run these before opening a
 - `npm run test:worker`: the Worker's unit tests (`worker/tests/`)
 - `npm run test:lib`: unit tests of the plain-TypeScript logic under `src/lib/` (collections: validation, pagination, the service against a fake store and against real SQLite with the migration)
 - `npm run lint:html`: html-validate on `dist/` (after a build)
-- `npm run test:e2e`: Playwright in Chromium and WebKit on every view (home, About, search, debug: `e2e/routes.ts`) against the production build: status 200, no console errors, no hosts but the mocked Fly API and cover art (`e2e/network.ts`), axe in light and dark, no horizontal scroll at 360 to 1440px. Run `npx playwright install chromium webkit` once first. Add a view to `e2e/routes.ts` when you add one
+- `npm run test:e2e`: Playwright in Chromium and WebKit on every view (home, picks, About, search, debug: `e2e/routes.ts`) against the production build: status 200, no console errors, no hosts but the mocked Fly API and cover art (`e2e/network.ts`), axe in light and dark, no horizontal scroll at 360 to 1440px. Run `npx playwright install chromium webkit` once first. Add a view to `e2e/routes.ts` when you add one
 - `npm run screenshots`: every view at each width, theme and browser into `screenshots/`; CI attaches them to the PR
 - `npm run dev`: local dev at http://localhost:5173, on the bundled catalog
 - `npm run walk`, `npm run eval`, `npm run reach`: judge a change to the recommender (`README.md`). CI runs `eval`, the one with assertions
@@ -40,6 +40,7 @@ Node 24 (`.nvmrc`, which CI and Workers Builds read). Run these before opening a
 - `api/`: the read-only catalog API that runs on Fly as `album-guide-api`. `DEPLOY.md` covers it.
 - `public/`: brand assets; the rules are in `BRAND.md`.
 - `src/collections.ts`: the collections this site has (staff picks). `worker/collections.ts` serves `GET /api/collections/<name>`; `migrations/` is applied by `npm run ship:production` on deploy; `scripts/seed-preview.sql` fills the preview and e2e databases (`docs/decisions/0016-collections.md`).
+- `picks.html` and `src/picks/`: the public staff picks page at `/picks`, 12 at a time from `/api/collections/picks`. Built with the admin by `vite.pages.config.ts`.
 - `admin.html` and `src/admin/`: the admin page, generated from the collections' definitions. It is built by a second Vite build (`vite.pages.config.ts`) so it never shares a chunk with the app or its catalog. `e2e/admin.spec.ts` drives it in a browser; `e2e/admin.ts` has the sign-in and the per-test scratch collections.
 - `worker/admin.ts` and `worker/admin-auth.ts`: `/admin` and `/admin/api/*`, staff only. Every request is checked there before anything else happens (`docs/decisions/0017-admin.md`). On a preview or a local run the sign-in is the preview code in `wrangler.jsonc`.
 - `wrangler.jsonc` and `worker/`: the Cloudflare Worker `album-guide-site` that serves the site, and its preview twin `album-guide-site-preview` (`env.preview`).

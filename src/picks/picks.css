@@ -1,0 +1,78 @@
+/*
+ * The /picks page. Dark only, like the app (src/index.css explains why: album
+ * art is composed against black), using the brand's dark values.
+ */
+@import '@fontsource/jost/400.css';
+@import '@fontsource/jost/500.css';
+@import '../brand-tokens.css';
+
+:root {
+  color-scheme: dark;
+  --ink: #f5f3ee;
+  --ink-muted: #c2bfb6;
+  --line: rgba(245, 243, 238, 0.16);
+  --accent: #8cbdea;
+  font-family: var(--ag-font);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background: #1a1918;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+}
+
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+.page { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+.page__head { margin-bottom: 2rem; }
+.page__home { display: inline-block; line-height: 0; }
+.page__head h1 { font-size: 2rem; font-weight: 500; line-height: 1.15; margin: 1rem 0 0.25rem; }
+.page__head p { margin: 0; color: var(--ink-muted); }
+
+.picks { list-style: none; margin: 0; padding: 0; }
+.pick { display: grid; grid-template-columns: 6.5rem 1fr; gap: 1rem; padding: 1.25rem 0; border-top: 1px solid var(--line); }
+.pick--featured { grid-template-columns: 10rem 1fr; }
+.pick__cover { aspect-ratio: 1; background: #2b2a28; border-radius: 6px; overflow: hidden; }
+.pick__cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.pick__words { min-width: 0; }
+.pick__title { font-size: 1.25rem; font-weight: 500; line-height: 1.25; margin: 0; overflow-wrap: anywhere; }
+.pick--featured .pick__title { font-size: 1.5rem; }
+.pick__by { margin: 0.15rem 0 0.5rem; color: var(--ink-muted); overflow-wrap: anywhere; }
+.pick__kind { display: inline-block; margin-left: 0.6rem; padding: 0 0.5rem; border: 1px solid var(--line); border-radius: 999px; font-size: 0.875rem; color: var(--ink); }
+.pick__note { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+.pick__more { margin: 0.5rem 0 0; }
+
+@media (max-width: 26rem) {
+  .pick, .pick--featured { grid-template-columns: 5rem 1fr; gap: 0.75rem; }
+}
+
+.page__status, .page__more, .page__back { margin: 1.5rem 0 0; }
+.page__status p { margin: 0; color: var(--ink-muted); }
+.page__status:empty { display: none; }
+
+button {
+  font: inherit;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--ink-muted);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
