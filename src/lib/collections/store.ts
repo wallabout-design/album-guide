@@ -10,6 +10,8 @@ export interface ListQuery {
   collection: string;
   /** `published`: what the public sees. `current`: everything not removed. `removed`: only removed. */
   show: 'published' | 'current' | 'removed';
+  /** With `removed`: only records removed at or after this time. */
+  removedSince?: string;
   /** Lowercase words; a record matches when its search text contains them. */
   search?: string;
   sort: SortOrder;

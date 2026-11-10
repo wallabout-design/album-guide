@@ -37,6 +37,7 @@ export function createMemoryStore(): CollectionStore {
         .filter((r) =>
           query.show === 'removed' ? r.deletedAt !== null : r.deletedAt === null && (query.show === 'current' || r.status === 'published'),
         )
+        .filter((r) => !query.removedSince || (r.deletedAt !== null && r.deletedAt >= query.removedSince))
         .filter((r) => !query.search || r.search.includes(query.search))
         .filter((r) => {
           if (!after) return true;

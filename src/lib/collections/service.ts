@@ -113,11 +113,20 @@ export function createCollections(options: CollectionsOptions) {
     };
   }
 
+  /**
+   * Removed records are kept this long so a removal can be undone. One removed
+   * before the cutoff is gone, even before its rows are purged.
+   */
+  const removedCutoff = () => new Date(now().getTime() - LIMITS.removedDays * 86_400_000).toISOString();
+  const expired = (record: StoredRecord) => record.deletedAt !== null && record.deletedAt < removedCutoff();
+  /** Deletes the rows of records removed before the cutoff. Run on every write. */
+  const purge = (name: string) => store.purgeRemoved(name, removedCutoff());
+
   async function load(name: string, id: string): Promise<Result<{ def: CollectionDefinition; record: StoredRecord }>> {
     const def = definitions.get(name);
     if (!def) return noCollection();
     const record = ID.test(id) ? await store.get(name, id) : null;
-    if (!record) return noRecord(def);
+    if (!record || expired(record)) return noRecord(def);
     return ok({ def, record });
   }
 
@@ -134,6 +143,7 @@ export function createCollections(options: CollectionsOptions) {
     const saved = await store.save(next, searchText(def, next.data), historyOf(next, action), ifUpdatedAt ?? record.updatedAt);
     if (!saved) return changed(def);
     await store.trimHistory(def.name, record.id, LIMITS.history);
+    await purge(def.name);
     return ok(next);
   }
 
@@ -166,9 +176,11 @@ export function createCollections(options: CollectionsOptions) {
       if (after === null) return fail({ code: 'bad_request', message: 'That page could not be found. Start again from the first page.' });
       const limit = clampLimit(options.limit, LIMITS.pageSize.default);
       const search = (options.search ?? '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, LIMITS.search);
+      const removed = options.show === 'removed';
       const rows = await store.list({
         collection: name,
-        show: options.show === 'removed' ? 'removed' : 'current',
+        show: removed ? 'removed' : 'current',
+        removedSince: removed ? removedCutoff() : undefined,
         search: search || undefined,
         sort: def.sort,
         after,
@@ -203,9 +215,7 @@ export function createCollections(options: CollectionsOptions) {
       const place = def.sort.by === 'position' ? (def.newRecords ?? 'last') : 'last';
       const added = await store.insert(record, searchText(def, record.data), place, maxOf(def), historyOf(record, 'create'));
       if (!added) return full(def);
-      // Removed records are kept for a while so a removal can be undone, then dropped.
-      const cutoff = new Date(now().getTime() - LIMITS.removedDays * 86_400_000).toISOString();
-      await store.purgeRemoved(name, cutoff);
+      await purge(name);
       return ok((await store.get(name, record.id)) ?? record);
     },
 
@@ -260,6 +270,7 @@ export function createCollections(options: CollectionsOptions) {
       if (!found.ok) return found;
       const { def, record } = found.value;
       if (record.deletedAt) return noRecord(def);
+      await purge(name);
       if (def.sort.by !== 'position') {
         return fail({ code: 'bad_request', message: `${def.label} is kept in a fixed order and can't be rearranged.` });
       }

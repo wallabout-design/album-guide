@@ -96,6 +96,10 @@ export function createSqlStore(db: SqlDatabase): CollectionStore {
       const ascending = directionOf(query.sort) === 'asc';
       const where = ['collection = ?', SHOW[query.show]];
       const values: unknown[] = [query.collection];
+      if (query.removedSince) {
+        where.push('deleted_at >= ?');
+        values.push(query.removedSince);
+      }
       if (query.search) {
         // instr, not LIKE: D1 refuses a LIKE pattern over 50 bytes, and both
         // sides are already lowercase, so plain containment is the match.
