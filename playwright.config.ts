@@ -18,7 +18,10 @@ export default defineConfig({
   testIgnore: baseURL ? undefined : 'production.spec.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
+  // A flaky test fails the run (standards/testing.md): the one retry in CI is
+  // only there to tell "flaky" from "broken" in the report, with a trace.
   retries: process.env.CI ? 1 : 0,
+  failOnFlakyTests: true,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: baseURL ?? `http://127.0.0.1:${port}`,
