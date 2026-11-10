@@ -40,9 +40,11 @@ test('a page view is sent with the path, UTMs, width and build', async ({ page, 
 test('engaged time is sent when the page is hidden', async ({ page, baseURL }) => {
   await guard(page, baseURL!);
   const sent = await recordBeacons(page);
+  // Playwright's clock, so the test moves time on by itself and doesn't sleep.
+  await page.clock.install();
   await page.goto('/', { waitUntil: 'networkidle' });
   await ready(page);
-  await page.waitForTimeout(300);
+  await page.clock.fastForward(300);
   await page.evaluate(() => {
     Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
     document.dispatchEvent(new Event('visibilitychange'));
