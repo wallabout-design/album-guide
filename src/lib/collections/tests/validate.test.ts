@@ -112,6 +112,17 @@ test('a tick box, a choice, an image and a reference each take only their own va
   assert.equal(errorsFor({ title: 'ok', ref: '0123abcd\nextra' }).ref, "Reference doesn't look right. It should look like 0123abcd.");
 });
 
+test('a reference longer than the limit is refused even when its pattern matches', () => {
+  const def: CollectionDefinition = {
+    ...everything,
+    fields: [everything.fields[0], { name: 'ref', label: 'Reference', type: 'reference', pattern: '[a-z]+', example: 'abc' }],
+  };
+  checkDefinition(def);
+  assert.equal(validateRecord(def, { title: 'ok', ref: 'a'.repeat(LIMITS.reference) }).ok, true);
+  const result = validateRecord(def, { title: 'ok', ref: 'a'.repeat(LIMITS.reference + 1) });
+  assert.deepEqual(result, { ok: false, errors: { ref: "Reference doesn't look right. It should look like abc." } });
+});
+
 test('a field the collection does not declare is refused, not saved', () => {
   assert.deepEqual(errorsFor({ title: 'ok', admin: true }), { [FORM]: 'The form is out of date. Please reload the page and try again.' });
 });

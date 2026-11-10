@@ -16,6 +16,15 @@ test('anything that is not a cursor decodes to null', () => {
   for (const text of bad) assert.equal(decodeCursor(text), null, text);
 });
 
+test('a well-formed cursor longer than 1,000 characters is refused', () => {
+  const long = encodeCursor({ key: 'k'.repeat(800), id: 'a' });
+  assert.ok(long.length > 1_000);
+  assert.equal(decodeCursor(long), null);
+  const justUnder = encodeCursor({ key: 'k'.repeat(700), id: 'a' });
+  assert.ok(justUnder.length <= 1_000);
+  assert.deepEqual(decodeCursor(justUnder), { key: 'k'.repeat(700), id: 'a' });
+});
+
 test('the limit falls back when missing or nonsense, and is clamped to 1..max', () => {
   assert.equal(clampLimit(undefined, 20), 20);
   assert.equal(clampLimit(null, 20), 20);
