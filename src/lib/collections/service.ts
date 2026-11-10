@@ -272,15 +272,29 @@ export function createCollections(options: CollectionsOptions) {
       if (direction !== 'up' && direction !== 'down') {
         return fail({ code: 'bad_request', message: 'That is not a way to move an entry.' });
       }
-      const other = await store.neighbour(record, direction);
+      let current = record;
+      let other = await store.neighbour(current, direction);
       if (!other) return ok(record);
-      // Two records can share a position if they were added at the same
-      // moment; then step past the neighbour instead of swapping equal numbers.
-      const position = other.position === record.position ? other.position + (direction === 'up' ? -1 : 1) : other.position;
-      const changes = [{ id, position }];
-      if (other.position !== record.position) changes.push({ id: other.id, position: record.position });
-      await store.setPositions(name, changes);
-      return ok({ ...record, position });
+      if (other.position === current.position) {
+        // Two records share a position (left by data from before positions
+        // were kept unique). Stepping past the neighbour could also pass a
+        // third record, so first number the current records 1..n in their
+        // present order, then swap as usual.
+        const all = await store.list({ collection: name, show: 'current', sort: def.sort, limit: await store.count(name) });
+        await store.setPositions(
+          name,
+          all.map((r, i) => ({ id: r.id, position: i + 1 })),
+        );
+        const renumbered = await store.get(name, id);
+        other = renumbered ? await store.neighbour(renumbered, direction) : null;
+        if (!renumbered || !other) return ok(renumbered ?? record);
+        current = renumbered;
+      }
+      await store.setPositions(name, [
+        { id, position: other.position },
+        { id: other.id, position: current.position },
+      ]);
+      return ok({ ...current, position: other.position });
     },
 
     /** A record's past versions, newest first. */
