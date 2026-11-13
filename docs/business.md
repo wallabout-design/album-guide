@@ -17,7 +17,7 @@ The premise: streaming recommendations over-index on the densest cluster of your
 ## how it runs
 
 - **The site** is a static Vite and React build, served by the Cloudflare Worker `album-guide-site` at https://album.guide (`decisions/0002-hosting.md`, `0003-domain.md`). It ships a bundled catalog of 12,000 albums, so it works on its own.
-- **The catalog API** (`album-guide-api` on Fly) serves the whole catalog, about 100,000 albums, read-only. If it's asleep or gone, the site falls back to the bundle. It's JJ's, deployed by hand (`DEPLOY.md`).
+- **The catalog API** (`album-guide-api` on Fly) serves the whole catalog, about 100,000 albums, read-only. If it's asleep or gone, the site falls back to the bundle. It's JJ's, deployed by hand (`docs/runbooks/deploy.md`).
 - **The data** comes from MusicBrainz, the Cover Art Archive and ListenBrainz, crawled by the Python scripts in `scripts/` on JJ's machine. Album links go to Spotify. A fresh snapshot of the bundle reaches the site through a PR (`decisions/0006-publish-through-a-pr.md`).
 - **Errors** go to Sentry through the Worker (`decisions/0004-error-tracking.md`). Visits are counted per `standards/telemetry.md`, with no cookies and no personal data.
 
