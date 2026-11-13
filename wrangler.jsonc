@@ -36,6 +36,8 @@
   // until the TELEMETRY_SALT secret is set (docs/open-items.md).
   "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "site_events" }],
   "observability": { "enabled": true },
+  // The deployed version, for the logs' `version` field (worker/log.ts).
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
   // Staff-managed collections (src/lib/collections, src/collections.ts).
   // `npm run ship:production` applies migrations/ before each deploy.
   "d1_databases": [
@@ -61,6 +63,7 @@
       // Declared so /api/event behaves as in production. With no
       // TELEMETRY_SALT secret on this Worker, nothing is written.
       "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "site_events" }],
+      "version_metadata": { "binding": "CF_VERSION_METADATA" },
       // The sign-in for /admin on previews, where there is no Cloudflare
       // Access: a fixed code, public on purpose (the preview's data is fake).
       // Production declares no such var and refuses it on album.guide
