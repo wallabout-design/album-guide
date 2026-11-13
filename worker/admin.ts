@@ -5,6 +5,7 @@ import { collections as siteCollections } from '../src/collections';
 import type { Collections, MoveDirection, Result } from '../src/lib/collections/service';
 import { sameText, staffEmail, TEST_COOKIE, testCookieValue, testLoginAllowed, type AdminEnv } from './admin-auth';
 import { collectionsFor, failure, unavailable, type CollectionsEnv } from './collections';
+import { logFor } from './log';
 
 export interface AdminRouteEnv extends AdminEnv, CollectionsEnv {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -212,13 +213,11 @@ export async function handleAdmin(request: Request, env: AdminRouteEnv): Promise
   try {
     const response = await api(request, env, email, path);
     if (request.method !== 'GET') {
-      console.log(JSON.stringify({ message: 'admin write', method: request.method, path: path.join('/'), status: response.status }));
+      logFor(env, request, 'admin').info('admin write', { method: request.method, path: path.join('/'), status: response.status });
     }
     return response;
   } catch (error) {
-    console.error(
-      JSON.stringify({ message: 'admin request failed', path: path.join('/'), error: error instanceof Error ? error.message : String(error) }),
-    );
+    logFor(env, request, 'admin').error('admin request failed', { path: path.join('/'), err: error });
     return unavailable();
   }
 }

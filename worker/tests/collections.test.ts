@@ -140,7 +140,13 @@ test('a database error is logged and answered with a 503', async (t) => {
   const { get } = await site(0, { DB: broken });
   const res = await get('/api/collections/picks');
   assert.equal(res.status, 503);
-  assert.match(String(logged.mock.calls[0].arguments[0]), /collection list failed.*boom/);
+  const line = JSON.parse(String(logged.mock.calls[0].arguments[0]));
+  assert.equal(line.msg, 'collection list failed');
+  assert.equal(line.error, 'boom');
+  assert.equal(line.level, 'error');
+  assert.equal(line.route, 'collections');
+  assert.equal(line.version, 'dev');
+  assert.ok(line.requestId);
 });
 
 test('scratch collections exist only when the e2e flag is set', async () => {

@@ -5,8 +5,9 @@ import { collections as siteCollections } from '../src/collections';
 import { createCollections, type Collections, type Failure } from '../src/lib/collections/service';
 import { createSqlStore, type SqlDatabase } from '../src/lib/collections/sql-store';
 import { exampleCollection } from '../src/lib/collections/testing';
+import { logFor, type VersionEnv } from './log';
 
-export interface CollectionsEnv {
+export interface CollectionsEnv extends VersionEnv {
   /** The site's D1 database. Without it every collections route answers 503. */
   DB?: SqlDatabase;
   /**
@@ -60,9 +61,7 @@ export async function publicList(request: Request, env: CollectionsEnv, name: st
   try {
     result = await service.listPublished(name, { cursor: url.searchParams.get('cursor'), limit: url.searchParams.get('limit') });
   } catch (error) {
-    console.error(
-      JSON.stringify({ message: 'collection list failed', collection: name, error: error instanceof Error ? error.message : String(error) }),
-    );
+    logFor(env, request, 'collections').error('collection list failed', { collection: name, err: error });
     return unavailable();
   }
   if (!result.ok) return failure(result.error);

@@ -8,6 +8,7 @@ import { handleAdmin, isAdminPath } from './admin';
 import { isProductionHost, type AdminEnv } from './admin-auth';
 import { publicList, type CollectionsEnv } from './collections';
 import { withSecurityHeaders } from './security-headers';
+import { logFor } from './log';
 import { SENTRY_TUNNEL_PATH, sentryTunnel } from './sentry';
 import { dataPoint, EVENT_PATH, MAX_BODY_BYTES, parseEvent, shouldDrop, visitorHash } from './telemetry';
 
@@ -51,9 +52,7 @@ export async function recordEvent(request: CfRequest, env: Env): Promise<Respons
       }),
     );
   } catch (error) {
-    console.error(
-      JSON.stringify({ message: 'telemetry write failed', error: error instanceof Error ? error.message : String(error) }),
-    );
+    logFor(env, request, 'event').error('telemetry write failed', { err: error });
   }
   return new Response(null, { status: 204 });
 }
@@ -96,6 +95,6 @@ async function handle(request: Request, env: Env): Promise<Response> {
   if (list && (request.method === 'GET' || request.method === 'HEAD')) return publicList(request, env, list[1]);
   const route = routes.find((r) => r.method === request.method && r.path === pathname);
   if (route) return route.handle(request, env);
-  console.log(JSON.stringify({ message: 'api not found', method: request.method, pathname }));
+  logFor(env, request, 'api').info('api not found', { method: request.method, pathname });
   return Response.json({ error: 'not found' }, { status: 404 });
 }
