@@ -56,7 +56,7 @@ the apex.
 
 **The catalog API** is a read-only Python server on Fly.io at
 `album-guide-api.fly.dev`, holding a copy of the crawl database with the
-crawler's bookkeeping dropped. It's deployed by hand, by JJ; see `DEPLOY.md`.
+crawler's bookkeeping dropped. It's deployed by hand, by JJ; see `docs/runbooks/deploy.md`.
 Machines sleep when idle, so the first request after a quiet spell takes a few
 seconds and the rest take about one.
 

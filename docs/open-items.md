@@ -21,7 +21,7 @@ printf 'first@example.com,second@example.com' | npx wrangler secret put ADMIN_EM
 
 ## later
 
-- [ ] **By 2028-09: decide whether to renew album.guide** (auto-renew is off; `DEPLOY.md`).
+- [ ] **By 2028-09: decide whether to renew album.guide** (auto-renew is off; `docs/runbooks/deploy.md`).
 
 ## done
 

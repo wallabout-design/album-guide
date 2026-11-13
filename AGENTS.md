@@ -41,7 +41,7 @@ Node 24 (`.nvmrc`, which CI and Workers Builds read). **Run `npm run verify` bef
 - `src/lib/collections/`: collections, the records staff add and edit. Plain TypeScript with no React, Worker or D1 imports, so it can move to a shared package; `migrations/` holds its one schema.
 - `src/`: the React app. `src/data/` holds the bundled catalog (`catalog.json`), the corridors, the lexicon and the schema.
 - `scripts/`: the Python crawler and backfills (run in the main checkout only), the TypeScript checks, `publish.sh` and `run_jobs.sh`.
-- `api/`: the read-only catalog API that runs on Fly as `album-guide-api`. `DEPLOY.md` covers it.
+- `api/`: the read-only catalog API that runs on Fly as `album-guide-api`. `docs/runbooks/deploy.md` covers it.
 - `public/`: brand assets; the rules are in `BRAND.md`.
 - `src/collections.ts`: the collections this site has (staff picks). `worker/collections.ts` serves `GET /api/collections/<name>`; `migrations/` is applied by `npm run ship:production` on deploy; `scripts/seed-preview.sql` fills the preview and e2e databases (`docs/decisions/0016-collections.md`).
 - `picks.html` and `src/picks/`: the public staff picks page at `/picks`, 12 at a time from `/api/collections/picks`. Built with the admin by `vite.pages.config.ts`.
